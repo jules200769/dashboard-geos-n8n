@@ -5,12 +5,9 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Legend,
   Line,
   LineChart,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -20,13 +17,6 @@ import { LeadCard } from "@/components/LeadCard";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { fetchLeads, saveLead } from "@/lib/api";
 import type { LeadRecord, MetricsResponse } from "@/lib/types";
-
-const sentimentColors: Record<string, string> = {
-  Positive: "#22c55e",
-  Neutral: "#f59e0b",
-  Negative: "#ef4444",
-  Unknown: "#94a3b8",
-};
 
 const emptyMetrics: MetricsResponse = {
   openLeads: 0,
@@ -157,29 +147,27 @@ export default function Home() {
               ) : null}
             </div>
           </div>
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-800">Sentiment mix</h2>
-            <div className="h-64">
-              {hasMounted ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={metrics.sentimentMix}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={65}
-                      outerRadius={92}
-                      paddingAngle={3}
-                    >
-                      {metrics.sentimentMix.map((entry) => (
-                        <Cell key={entry.name} fill={sentimentColors[entry.name] ?? "#64748b"} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : null}
+          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm flex flex-col">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-zinc-800">Open review queue</h2>
+              <p className="text-xs text-zinc-500">{openLeads.length} records</p>
+            </div>
+            <div className="h-64 overflow-y-auto pr-2 flex flex-col gap-3">
+              {isLoading ? (
+                <div className="py-8 text-center text-sm text-zinc-500">Laden...</div>
+              ) : openLeads.length === 0 ? (
+                <div className="py-8 text-center text-sm text-zinc-500">Geen open leads in de queue.</div>
+              ) : (
+                openLeads.map((lead) => (
+                  <LeadCard
+                    key={lead.id}
+                    lead={lead}
+                    onOpen={setSelectedLead}
+                    onSave={handleSave}
+                    isSaving={savingId === lead.id}
+                  />
+                ))
+              )}
             </div>
           </div>
         </section>
@@ -219,33 +207,6 @@ export default function Home() {
           </div>
         </section>
 
-        <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-zinc-900">Open review queue</h2>
-            <p className="text-sm text-zinc-500">{openLeads.length} records</p>
-          </div>
-          {isLoading ? (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center text-zinc-500">
-              Laden...
-            </div>
-          ) : openLeads.length === 0 ? (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center text-zinc-500">
-              Geen open leads in de queue.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {openLeads.map((lead) => (
-                <LeadCard
-                  key={lead.id}
-                  lead={lead}
-                  onOpen={setSelectedLead}
-                  onSave={handleSave}
-                  isSaving={savingId === lead.id}
-                />
-              ))}
-            </div>
-          )}
-        </section>
       </main>
 
       <LeadDetailDrawer
