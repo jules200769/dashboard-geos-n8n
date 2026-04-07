@@ -6,10 +6,12 @@ interface LeadCardProps {
   lead: LeadRecord;
   onOpen: (lead: LeadRecord) => void;
   onSave: (lead: LeadRecord) => void;
+  onIgnore: (lead: LeadRecord) => void;
   isSaving: boolean;
+  isIgnoring: boolean;
 }
 
-export function LeadCard({ lead, onOpen, onSave, isSaving }: LeadCardProps) {
+export function LeadCard({ lead, onOpen, onSave, onIgnore, isSaving, isIgnoring }: LeadCardProps) {
   const urgencyTone =
     lead.urgency_score >= 7
       ? "bg-red-100 text-red-700"
@@ -41,6 +43,14 @@ export function LeadCard({ lead, onOpen, onSave, isSaving }: LeadCardProps) {
       </div>
 
       <div className="mt-4 flex items-center gap-2">
+        <button
+          type="button"
+          disabled={isIgnoring}
+          onClick={() => onIgnore(lead)}
+          className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+        >
+          {isIgnoring ? "Verwijderen..." : "Negeer"}
+        </button>
         <button
           type="button"
           onClick={() => onOpen(lead)}

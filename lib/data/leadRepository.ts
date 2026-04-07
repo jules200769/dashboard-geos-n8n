@@ -33,6 +33,12 @@ export async function upsertLead(lead: Partial<LeadRecord>): Promise<LeadRecord>
   return data as LeadRecord;
 }
 
+export async function deleteLead(id: string): Promise<void> {
+  const supabase = supabaseServerClient();
+  const { error } = await supabase.from(TABLE).delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function markLeadSaved(
   id: string,
   savePayload: Record<string, unknown>,

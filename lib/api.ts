@@ -34,6 +34,16 @@ export async function fetchLeads(): Promise<LeadsApiResponse> {
   return payload as LeadsApiResponse;
 }
 
+export async function ignoreLead(id: string): Promise<{ message: string }> {
+  const response = await fetch(`/api/leads/${id}`, { method: "DELETE" });
+  const payload = await response.json();
+  if (!response.ok) {
+    const raw = typeof payload.error === "string" ? payload.error : "Verwijderen mislukt.";
+    throw new Error(raw);
+  }
+  return payload;
+}
+
 export async function saveLead(id: string): Promise<{ message: string }> {
   const response = await fetch(`/api/leads/${id}/save`, {
     method: "POST",

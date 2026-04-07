@@ -15,7 +15,7 @@ import {
 } from "recharts";
 import { LeadCard } from "@/components/LeadCard";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
-import { fetchLeads, saveLead } from "@/lib/api";
+import { fetchLeads, ignoreLead, saveLead } from "@/lib/api";
 import type { LeadRecord, MetricsResponse } from "@/lib/types";
 
 const emptyMetrics: MetricsResponse = {
@@ -43,6 +43,7 @@ export default function Home() {
   const [selectedLead, setSelectedLead] = useState<LeadRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [ignoringId, setIgnoringId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string>("");
   const [hasMounted, setHasMounted] = useState(false);
 
@@ -69,6 +70,20 @@ export default function Home() {
   const handleLeadChange = (next: LeadRecord) => {
     setLeads((current) => current.map((lead) => (lead.id === next.id ? next : lead)));
     setSelectedLead(next);
+  };
+
+  const handleIgnore = async (lead: LeadRecord) => {
+    setIgnoringId(lead.id);
+    setFeedback("");
+    try {
+      await ignoreLead(lead.id);
+      setLeads((current) => current.filter((item) => item.id !== lead.id));
+      if (selectedLead?.id === lead.id) setSelectedLead(null);
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Verwijderen mislukt.");
+    } finally {
+      setIgnoringId(null);
+    }
   };
 
   const handleSave = async (lead: LeadRecord) => {
@@ -164,7 +179,9 @@ export default function Home() {
                     lead={lead}
                     onOpen={setSelectedLead}
                     onSave={handleSave}
+                    onIgnore={handleIgnore}
                     isSaving={savingId === lead.id}
+                    isIgnoring={ignoringId === lead.id}
                   />
                 ))
               )}
