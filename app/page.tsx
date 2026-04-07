@@ -91,7 +91,7 @@ export default function Home() {
       setFeedback(result.message);
       await loadDashboard();
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Save mislukt.");
+      setFeedback(error instanceof Error ? error.message : "Opslaan mislukt.");
     } finally {
       setSavingId(null);
     }
@@ -102,9 +102,9 @@ export default function Home() {
       <main className="mx-auto max-w-7xl px-4 py-6 md:px-8">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">Geos Lead Review Dashboard</h1>
+            <h1 className="text-2xl font-semibold text-zinc-900">Geos leadreview-dashboard</h1>
             <p className="text-sm text-zinc-600">
-              Queue van leads die niet in Salesforce gevonden zijn.
+              Wachtrij van leads die niet in Salesforce gevonden zijn.
             </p>
           </div>
           <button
@@ -112,7 +112,7 @@ export default function Home() {
             onClick={loadDashboard}
             className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            Refresh
+            Vernieuwen
           </button>
         </header>
 
@@ -124,13 +124,13 @@ export default function Home() {
 
         <section className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
           <KpiTile title="Open leads" value={metrics.openLeads} />
-          <KpiTile title="Saved vandaag" value={metrics.savedToday} />
+          <KpiTile title="Vandaag opgeslagen" value={metrics.savedToday} />
           <KpiTile title="Geschatte tijdsbesparing (min)" value={metrics.estimatedTimeSavedMinutes} />
         </section>
 
         <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
           <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-800">Open vs Saved (laatste 14 dagen)</h2>
+            <h2 className="mb-3 text-sm font-semibold text-zinc-800">Open vs opgeslagen (laatste 14 dagen)</h2>
             <div className="h-64">
               {hasMounted ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -140,8 +140,8 @@ export default function Home() {
                     <YAxis allowDecimals={false} />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="open" stroke="#0f172a" strokeWidth={2} />
-                    <Line type="monotone" dataKey="saved" stroke="#16a34a" strokeWidth={2} />
+                    <Line type="monotone" dataKey="open" name="Open" stroke="#0f172a" strokeWidth={2} />
+                    <Line type="monotone" dataKey="saved" name="Opgeslagen" stroke="#16a34a" strokeWidth={2} />
                   </LineChart>
                 </ResponsiveContainer>
               ) : null}
@@ -149,14 +149,14 @@ export default function Home() {
           </div>
           <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm flex flex-col">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-zinc-800">Open review queue</h2>
-              <p className="text-xs text-zinc-500">{openLeads.length} records</p>
+              <h2 className="text-sm font-semibold text-zinc-800">Open beoordelingswachtrij</h2>
+              <p className="text-xs text-zinc-500">{openLeads.length} vermeldingen</p>
             </div>
             <div className="h-64 overflow-y-auto pr-2 flex flex-col gap-3">
               {isLoading ? (
                 <div className="py-8 text-center text-sm text-zinc-500">Laden...</div>
               ) : openLeads.length === 0 ? (
-                <div className="py-8 text-center text-sm text-zinc-500">Geen open leads in de queue.</div>
+                <div className="py-8 text-center text-sm text-zinc-500">Geen open leads in de wachtrij.</div>
               ) : (
                 openLeads.map((lead) => (
                   <LeadCard
@@ -174,7 +174,7 @@ export default function Home() {
 
         <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
           <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-800">Top topics</h2>
+            <h2 className="mb-3 text-sm font-semibold text-zinc-800">Top onderwerpen</h2>
             <div className="h-64">
               {hasMounted ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -190,7 +190,7 @@ export default function Home() {
             </div>
           </div>
           <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-800">Top intents</h2>
+            <h2 className="mb-3 text-sm font-semibold text-zinc-800">Top intenties</h2>
             <div className="h-64">
               {hasMounted ? (
                 <ResponsiveContainer width="100%" height="100%">

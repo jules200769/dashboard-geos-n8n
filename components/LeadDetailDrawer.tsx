@@ -41,7 +41,7 @@ export function LeadDetailDrawer({
       <aside className="flex h-full w-full max-w-5xl flex-col bg-white shadow-2xl">
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 px-6 py-4">
-          <h2 className="text-lg font-semibold text-zinc-900">Lead Review</h2>
+          <h2 className="text-lg font-semibold text-zinc-900">Leadreview</h2>
           <button
             type="button"
             onClick={onClose}
@@ -111,7 +111,7 @@ export function LeadDetailDrawer({
                   />
                 </label>
                 <label className="space-y-1">
-                  <span className="text-xs font-medium text-zinc-600">Email</span>
+                  <span className="text-xs font-medium text-zinc-600">E-mail</span>
                   <input
                     value={draft.sender_email}
                     onChange={(event) => update("sender_email", event.target.value)}
@@ -119,7 +119,7 @@ export function LeadDetailDrawer({
                   />
                 </label>
                 <label className="space-y-1">
-                  <span className="text-xs font-medium text-zinc-600">Domain</span>
+                  <span className="text-xs font-medium text-zinc-600">Domein</span>
                   <input
                     value={draft.sender_domain}
                     onChange={(event) => update("sender_domain", event.target.value)}
@@ -127,7 +127,7 @@ export function LeadDetailDrawer({
                   />
                 </label>
                 <label className="space-y-1">
-                  <span className="text-xs font-medium text-zinc-600">Suggested action</span>
+                  <span className="text-xs font-medium text-zinc-600">Aanbevolen actie</span>
                   <textarea
                     value={draft.suggested_action}
                     onChange={(event) => update("suggested_action", event.target.value)}
@@ -137,11 +137,11 @@ export function LeadDetailDrawer({
               </div>
 
               <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
-                <p className="font-medium text-zinc-900">Salesforce review context</p>
-                <p className="mt-1">Lead rating: {draft.lead_rating}</p>
-                <p>Intent: {draft.intent || "-"}</p>
-                <p>Primary topic: {draft.primary_topic || "-"}</p>
-                <p>Matched in: {draft.matched_in.join(", ") || "Geen match"}</p>
+                <p className="font-medium text-zinc-900">Context voor Salesforce review</p>
+                <p className="mt-1">Leadscore: {draft.lead_rating}</p>
+                <p>Intentie: {draft.intent || "-"}</p>
+                <p>Hoofdonderwerp: {draft.primary_topic || "-"}</p>
+                <p>Match gevonden in: {draft.matched_in.join(", ") || "Geen overeenkomst"}</p>
                 <p>Reden not-found: {draft.match_reason || "Niet gevonden in Salesforce"}</p>
               </div>
 
@@ -151,7 +151,7 @@ export function LeadDetailDrawer({
                 disabled={isSaving || draft.status === "saved"}
                 className="mt-6 w-full rounded-lg bg-zinc-900 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-zinc-400"
               >
-                {draft.status === "saved" ? "Saved" : isSaving ? "Saving..." : "Save"}
+                {draft.status === "saved" ? "Opgeslagen" : isSaving ? "Bezig met opslaan..." : "Opslaan"}
               </button>
             </div>
           </div>

@@ -27,16 +27,16 @@ export function LeadCard({ lead, onOpen, onSave, isSaving }: LeadCardProps) {
           <p className="text-sm text-zinc-600">{lead.org_name || "Onbekend bedrijf"}</p>
         </div>
         <span className={`rounded-full px-2 py-1 text-xs font-medium ${urgencyTone}`}>
-          Urgency {lead.urgency_score}
+          Urgentie {lead.urgency_score}
         </span>
       </div>
 
       <div className="space-y-1 text-sm text-zinc-700">
         <p>
-          <span className="font-medium">Email:</span> {lead.sender_email || "-"}
+          <span className="font-medium">E-mail:</span> {lead.sender_email || "-"}
         </p>
         <p>
-          <span className="font-medium">Domain:</span> {lead.sender_domain || "-"}
+          <span className="font-medium">Domein:</span> {lead.sender_domain || "-"}
         </p>
       </div>
 
@@ -54,7 +54,7 @@ export function LeadCard({ lead, onOpen, onSave, isSaving }: LeadCardProps) {
           onClick={() => onSave(lead)}
           className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-zinc-400"
         >
-          {lead.status === "saved" ? "Saved" : isSaving ? "Saving..." : "Save"}
+          {lead.status === "saved" ? "Opgeslagen" : isSaving ? "Bezig met opslaan..." : "Opslaan"}
         </button>
       </div>
     </article>

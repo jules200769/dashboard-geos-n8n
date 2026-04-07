@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Geos Web Dashboard",
-  description: "Lead review dashboard gekoppeld aan n8n en Supabase.",
+  title: "Geos-dashboard",
+  description: "Leadreview-dashboard gekoppeld aan n8n en Supabase.",
 };
 
 export default function RootLayout({
@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="nl"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
