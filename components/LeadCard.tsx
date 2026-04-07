@@ -47,7 +47,7 @@ export function LeadCard({ lead, onOpen, onSave, onIgnore, isSaving, isIgnoring 
           type="button"
           disabled={isIgnoring}
           onClick={() => onIgnore(lead)}
-          className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+          className="rounded-lg bg-[#EE7371] px-3 py-2 text-sm font-medium text-white hover:bg-[#e06664] disabled:cursor-not-allowed disabled:bg-[#f4b2b1]"
         >
           {isIgnoring ? "Verwijderen..." : "Negeer"}
         </button>
