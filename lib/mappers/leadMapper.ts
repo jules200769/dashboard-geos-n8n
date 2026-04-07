@@ -77,6 +77,7 @@ export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
     budget_mentioned: asBoolean(payload.budget_mentioned),
     event_referenced: asString(payload.event_referenced),
     suggested_action: asString(payload.suggested_action),
+    email_body: asString(payload.emailBody || payload.email_body || payload.text),
     exists_in_salesforce: asBoolean(payload.existsInSalesforce),
     matched_in: toMatchedIn(payload.matchedIn),
     match_reason: asString(payload.reason),

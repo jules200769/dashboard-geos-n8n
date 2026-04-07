@@ -34,80 +34,128 @@ export function LeadDetailDrawer({
     onChange(next);
   };
 
+  const hasEmailBody = Boolean(draft.email_body?.trim());
+
   return (
     <div className="fixed inset-0 z-40 flex justify-end bg-black/35">
-      <aside className="h-full w-full max-w-xl overflow-y-auto bg-white p-6 shadow-2xl">
-        <div className="mb-4 flex items-center justify-between">
+      <aside className="flex h-full w-full max-w-5xl flex-col bg-white shadow-2xl">
+        {/* Header */}
+        <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 px-6 py-4">
           <h2 className="text-lg font-semibold text-zinc-900">Lead Review</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-zinc-300 px-3 py-1 text-sm text-zinc-700"
+            className="rounded-md border border-zinc-300 px-3 py-1 text-sm text-zinc-700 hover:bg-zinc-50"
           >
             Sluiten
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-zinc-600">Naam</span>
-            <input
-              value={draft.contact_name}
-              onChange={(event) => update("contact_name", event.target.value)}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
-            />
-          </label>
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-zinc-600">Bedrijf</span>
-            <input
-              value={draft.org_name}
-              onChange={(event) => update("org_name", event.target.value)}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
-            />
-          </label>
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-zinc-600">Email</span>
-            <input
-              value={draft.sender_email}
-              onChange={(event) => update("sender_email", event.target.value)}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
-            />
-          </label>
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-zinc-600">Domain</span>
-            <input
-              value={draft.sender_domain}
-              onChange={(event) => update("sender_domain", event.target.value)}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
-            />
-          </label>
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-zinc-600">Suggested action</span>
-            <textarea
-              value={draft.suggested_action}
-              onChange={(event) => update("suggested_action", event.target.value)}
-              className="min-h-24 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
-            />
-          </label>
-        </div>
+        {/* Two-column body */}
+        <div className="flex min-h-0 flex-1">
+          {/* Left column — Original email */}
+          <div className="flex w-1/2 flex-col border-r border-zinc-200">
+            <div className="shrink-0 border-b border-zinc-100 bg-zinc-50 px-6 py-3">
+              <h3 className="text-sm font-semibold text-zinc-800">Bronmail</h3>
+            </div>
 
-        <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
-          <p className="font-medium text-zinc-900">Salesforce review context</p>
-          <p className="mt-1">Lead rating: {draft.lead_rating}</p>
-          <p>Intent: {draft.intent || "-"}</p>
-          <p>Primary topic: {draft.primary_topic || "-"}</p>
-          <p>Matched in: {draft.matched_in.join(", ") || "Geen match"}</p>
-          <p>Reden not-found: {draft.match_reason || "Niet gevonden in Salesforce"}</p>
-        </div>
+            {hasEmailBody ? (
+              <div className="flex-1 overflow-y-auto px-6 py-4">
+                <div className="mb-3 space-y-1 text-sm text-zinc-600">
+                  <p>
+                    <span className="font-medium text-zinc-700">Onderwerp:</span>{" "}
+                    {draft.subject || "-"}
+                  </p>
+                  <p>
+                    <span className="font-medium text-zinc-700">Van:</span>{" "}
+                    {draft.sender_email || "-"}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                  <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-zinc-800">
+                    {draft.email_body}
+                  </pre>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-1 items-center justify-center px-6">
+                <p className="text-sm text-zinc-400">
+                  Geen bronmail beschikbaar voor deze lead.
+                </p>
+              </div>
+            )}
+          </div>
 
-        <button
-          type="button"
-          onClick={() => onSave(draft)}
-          disabled={isSaving || draft.status === "saved"}
-          className="mt-6 w-full rounded-lg bg-zinc-900 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-zinc-400"
-        >
-          {draft.status === "saved" ? "Saved" : isSaving ? "Saving..." : "Save"}
-        </button>
+          {/* Right column — Editable fields + context */}
+          <div className="flex w-1/2 flex-col">
+            <div className="shrink-0 border-b border-zinc-100 bg-zinc-50 px-6 py-3">
+              <h3 className="text-sm font-semibold text-zinc-800">Gegevens</h3>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              <div className="grid grid-cols-1 gap-4">
+                <label className="space-y-1">
+                  <span className="text-xs font-medium text-zinc-600">Naam</span>
+                  <input
+                    value={draft.contact_name}
+                    onChange={(event) => update("contact_name", event.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs font-medium text-zinc-600">Bedrijf</span>
+                  <input
+                    value={draft.org_name}
+                    onChange={(event) => update("org_name", event.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs font-medium text-zinc-600">Email</span>
+                  <input
+                    value={draft.sender_email}
+                    onChange={(event) => update("sender_email", event.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs font-medium text-zinc-600">Domain</span>
+                  <input
+                    value={draft.sender_domain}
+                    onChange={(event) => update("sender_domain", event.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs font-medium text-zinc-600">Suggested action</span>
+                  <textarea
+                    value={draft.suggested_action}
+                    onChange={(event) => update("suggested_action", event.target.value)}
+                    className="min-h-24 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
+                <p className="font-medium text-zinc-900">Salesforce review context</p>
+                <p className="mt-1">Lead rating: {draft.lead_rating}</p>
+                <p>Intent: {draft.intent || "-"}</p>
+                <p>Primary topic: {draft.primary_topic || "-"}</p>
+                <p>Matched in: {draft.matched_in.join(", ") || "Geen match"}</p>
+                <p>Reden not-found: {draft.match_reason || "Niet gevonden in Salesforce"}</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onSave(draft)}
+                disabled={isSaving || draft.status === "saved"}
+                className="mt-6 w-full rounded-lg bg-zinc-900 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-zinc-400"
+              >
+                {draft.status === "saved" ? "Saved" : isSaving ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
       </aside>
     </div>
   );

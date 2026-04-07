@@ -17,6 +17,7 @@ export interface LeadRecord {
   budget_mentioned: boolean;
   event_referenced: string;
   suggested_action: string;
+  email_body: string;
   exists_in_salesforce: boolean;
   matched_in: string[];
   match_reason: string;

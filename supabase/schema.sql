@@ -23,6 +23,7 @@ create table if not exists public.lead_queue (
   lead_rating text not null default 'Warm',
   status text not null default 'open' check (status in ('open', 'saved')),
   save_payload jsonb not null default '{}'::jsonb,
+  email_body text not null default '',
   raw_payload jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
