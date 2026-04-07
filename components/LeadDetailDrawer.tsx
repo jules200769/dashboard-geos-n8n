@@ -54,7 +54,7 @@ export function LeadDetailDrawer({
             <input
               value={draft.contact_name}
               onChange={(event) => update("contact_name", event.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
             />
           </label>
           <label className="space-y-1">
@@ -62,7 +62,7 @@ export function LeadDetailDrawer({
             <input
               value={draft.org_name}
               onChange={(event) => update("org_name", event.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
             />
           </label>
           <label className="space-y-1">
@@ -70,7 +70,7 @@ export function LeadDetailDrawer({
             <input
               value={draft.sender_email}
               onChange={(event) => update("sender_email", event.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
             />
           </label>
           <label className="space-y-1">
@@ -78,7 +78,7 @@ export function LeadDetailDrawer({
             <input
               value={draft.sender_domain}
               onChange={(event) => update("sender_domain", event.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
             />
           </label>
           <label className="space-y-1">
@@ -86,7 +86,7 @@ export function LeadDetailDrawer({
             <textarea
               value={draft.suggested_action}
               onChange={(event) => update("suggested_action", event.target.value)}
-              className="min-h-24 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              className="min-h-24 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
             />
           </label>
         </div>

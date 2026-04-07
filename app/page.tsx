@@ -108,7 +108,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-100">
+    <div className="min-h-screen bg-zinc-100 text-zinc-900">
       <main className="mx-auto max-w-7xl px-4 py-6 md:px-8">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
