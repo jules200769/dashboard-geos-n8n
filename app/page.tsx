@@ -12,11 +12,16 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { LeadCard } from "@/components/LeadCard";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { fetchLeads, ignoreLead, saveLead } from "@/lib/api";
 import type { LeadRecord, MetricsResponse } from "@/lib/types";
+
+const COLORS = ['#7c3aed', '#0284c7', '#16a34a', '#ea580c', '#e11d48', '#d97706'];
 
 const emptyMetrics: MetricsResponse = {
   openLeads: 0,
@@ -211,19 +216,22 @@ export default function Home() {
             <div className="h-64">
               {hasMounted ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={metrics.intentSeries} layout="vertical" margin={{ left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" allowDecimals={false} />
-                    <YAxis
-                      type="category"
-                      dataKey="intent"
-                      width={140}
-                      tick={{ fontSize: 12 }}
-                      tickFormatter={(v) => typeof v === 'string' ? v.replace(/_/g, " ") : v}
-                    />
+                  <PieChart>
+                    <Pie
+                      data={metrics.intentSeries}
+                      dataKey="count"
+                      nameKey="intent"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={(entry) => typeof entry.intent === 'string' ? entry.intent.replace(/_/g, " ") : entry.intent}
+                    >
+                      {metrics.intentSeries.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
                     <Tooltip formatter={(value) => [value, "Aantal"]} />
-                    <Bar dataKey="count" fill="#7c3aed" radius={[0, 6, 6, 0]} barSize={24} />
-                  </BarChart>
+                  </PieChart>
                 </ResponsiveContainer>
               ) : null}
             </div>
