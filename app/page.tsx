@@ -121,11 +121,26 @@ export default function Home() {
     <div className="min-h-screen bg-zinc-100 text-zinc-900">
       <main className="mx-auto max-w-[1600px] px-6 py-8 md:px-12">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-semibold text-zinc-900">Geos leadreview-dashboard</h1>
-            <p className="text-base text-zinc-600">
-              Wachtrij van leads die niet in Salesforce gevonden zijn.
-            </p>
+          <div className="flex items-center gap-4">
+            <a
+              href="/"
+              className="shrink-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+              aria-label="Ga naar dashboard home"
+            >
+              <img
+                src="/logo-geos.png"
+                alt="GEOS Laboratories"
+                className="h-10 w-auto"
+                loading="eager"
+                decoding="async"
+              />
+            </a>
+            <div>
+              <h1 className="text-3xl font-semibold text-zinc-900">leadreview-dashboard</h1>
+              <p className="text-base text-zinc-600">
+                Wachtrij van leads die niet in Salesforce gevonden zijn.
+              </p>
+            </div>
           </div>
           <button
             type="button"
