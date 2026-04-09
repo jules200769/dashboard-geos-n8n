@@ -224,7 +224,9 @@ export default function Home() {
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      label={(entry) => typeof entry.intent === 'string' ? entry.intent.replace(/_/g, " ") : entry.intent}
+                      label={(props) =>
+                        typeof props.name === "string" ? props.name.replace(/_/g, " ") : props.name
+                      }
                     >
                       {metrics.intentSeries.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
