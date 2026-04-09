@@ -211,12 +211,18 @@ export default function Home() {
             <div className="h-64">
               {hasMounted ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={metrics.intentSeries}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="intent" />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#7c3aed" radius={[6, 6, 0, 0]} />
+                  <BarChart data={metrics.intentSeries} layout="vertical" margin={{ left: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" allowDecimals={false} />
+                    <YAxis
+                      type="category"
+                      dataKey="intent"
+                      width={140}
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(v) => typeof v === 'string' ? v.replace(/_/g, " ") : v}
+                    />
+                    <Tooltip formatter={(value) => [value, "Aantal"]} />
+                    <Bar dataKey="count" fill="#7c3aed" radius={[0, 6, 6, 0]} barSize={24} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : null}
