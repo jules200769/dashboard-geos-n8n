@@ -20,20 +20,20 @@ export function LeadCard({ lead, onOpen, onSave, onIgnore, isSaving, isIgnoring 
         : "bg-emerald-100 text-emerald-700";
 
   return (
-    <article className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <article className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-semibold text-zinc-900">
+          <h3 className="text-lg font-semibold text-zinc-900">
             {lead.contact_name || "Onbekende contactpersoon"}
           </h3>
-          <p className="text-sm text-zinc-600">{lead.org_name || "Onbekend bedrijf"}</p>
+          <p className="text-base text-zinc-600">{lead.org_name || "Onbekend bedrijf"}</p>
         </div>
-        <span className={`rounded-full px-2 py-1 text-xs font-medium ${urgencyTone}`}>
+        <span className={`rounded-full px-2.5 py-1 text-sm font-medium ${urgencyTone}`}>
           Urgentie {lead.urgency_score}
         </span>
       </div>
 
-      <div className="space-y-1 text-sm text-zinc-700">
+      <div className="space-y-1 text-base text-zinc-700">
         <p>
           <span className="font-medium">E-mail:</span> {lead.sender_email || "-"}
         </p>
@@ -47,14 +47,14 @@ export function LeadCard({ lead, onOpen, onSave, onIgnore, isSaving, isIgnoring 
           type="button"
           disabled={isIgnoring}
           onClick={() => onIgnore(lead)}
-          className="rounded-lg border border-red-600 bg-[#EE7371] px-3 py-2 text-sm font-medium text-white hover:bg-[#e06664] disabled:cursor-not-allowed disabled:bg-[#f4b2b1]"
+          className="rounded-lg border border-red-600 bg-[#EE7371] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#e06664] disabled:cursor-not-allowed disabled:bg-[#f4b2b1]"
         >
           {isIgnoring ? "Verwijderen..." : "Negeer"}
         </button>
         <button
           type="button"
           onClick={() => onOpen(lead)}
-          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          className="rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
         >
           Bekijk
         </button>
@@ -62,7 +62,7 @@ export function LeadCard({ lead, onOpen, onSave, onIgnore, isSaving, isIgnoring 
           type="button"
           disabled={isSaving || lead.status === "saved"}
           onClick={() => onSave(lead)}
-          className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-zinc-400"
+          className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-zinc-400"
         >
           {lead.status === "saved" ? "Opgeslagen" : isSaving ? "Bezig met opslaan..." : "Opslaan"}
         </button>

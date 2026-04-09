@@ -35,9 +35,9 @@ const emptyMetrics: MetricsResponse = {
 
 function KpiTile({ title, value }: { title: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-      <p className="text-sm text-zinc-500">{title}</p>
-      <p className="mt-2 text-2xl font-semibold text-zinc-900">{value}</p>
+    <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <p className="text-base text-zinc-500">{title}</p>
+      <p className="mt-2 text-4xl font-semibold text-zinc-900">{value}</p>
     </div>
   );
 }
@@ -119,45 +119,45 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-zinc-100 text-zinc-900">
-      <main className="mx-auto max-w-7xl px-4 py-6 md:px-8">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <main className="mx-auto max-w-[1600px] px-6 py-8 md:px-12">
+        <header className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">Geos leadreview-dashboard</h1>
-            <p className="text-sm text-zinc-600">
+            <h1 className="text-3xl font-semibold text-zinc-900">Geos leadreview-dashboard</h1>
+            <p className="text-base text-zinc-600">
               Wachtrij van leads die niet in Salesforce gevonden zijn.
             </p>
           </div>
           <button
             type="button"
             onClick={loadDashboard}
-            className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-base font-medium text-zinc-700 hover:bg-zinc-50"
           >
             Vernieuwen
           </button>
         </header>
 
         {feedback && (
-          <div className="mb-4 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-700">
+          <div className="mb-5 rounded-xl border border-zinc-200 bg-white px-5 py-3.5 text-base text-zinc-700">
             {feedback}
           </div>
         )}
 
-        <section className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <section className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
           <KpiTile title="Open leads" value={metrics.openLeads} />
           <KpiTile title="Vandaag opgeslagen" value={metrics.savedToday} />
           <KpiTile title="Geschatte tijdsbesparing (min)" value={metrics.estimatedTimeSavedMinutes} />
         </section>
 
-        <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-800">Open vs opgeslagen (laatste 14 dagen)</h2>
-            <div className="h-64">
+        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-base font-semibold text-zinc-800">Open vs opgeslagen (laatste 14 dagen)</h2>
+            <div className="h-80">
               {hasMounted ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={metrics.openVsSavedSeries}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis allowDecimals={false} />
+                    <XAxis dataKey="day" tick={{ fontSize: 13 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 13 }} />
                     <Tooltip />
                     <Legend />
                     <Line type="monotone" dataKey="open" name="Open" stroke="#0f172a" strokeWidth={2} />
@@ -167,16 +167,16 @@ export default function Home() {
               ) : null}
             </div>
           </div>
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm flex flex-col">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-zinc-800">Open beoordelingswachtrij</h2>
-              <p className="text-xs text-zinc-500">{openLeads.length} vermeldingen</p>
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm flex flex-col">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-zinc-800">Open beoordelingswachtrij</h2>
+              <p className="text-sm text-zinc-500">{openLeads.length} vermeldingen</p>
             </div>
-            <div className="h-64 overflow-y-auto pr-2 flex flex-col gap-3">
+            <div className="h-80 overflow-y-auto pr-2 flex flex-col gap-3">
               {isLoading ? (
-                <div className="py-8 text-center text-sm text-zinc-500">Laden...</div>
+                <div className="py-8 text-center text-base text-zinc-500">Laden...</div>
               ) : openLeads.length === 0 ? (
-                <div className="py-8 text-center text-sm text-zinc-500">Geen open leads in de wachtrij.</div>
+                <div className="py-8 text-center text-base text-zinc-500">Geen open leads in de wachtrij.</div>
               ) : (
                 openLeads.map((lead) => (
                   <LeadCard
@@ -194,16 +194,16 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-800">Top onderwerpen</h2>
-            <div className="h-64">
+        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-base font-semibold text-zinc-800">Top onderwerpen</h2>
+            <div className="h-80">
               {hasMounted ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={metrics.topicSeries}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="topic" />
-                    <YAxis allowDecimals={false} />
+                    <XAxis dataKey="topic" tick={{ fontSize: 13 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 13 }} />
                     <Tooltip />
                     <Bar dataKey="count" fill="#0284c7" radius={[6, 6, 0, 0]} />
                   </BarChart>
@@ -211,9 +211,9 @@ export default function Home() {
               ) : null}
             </div>
           </div>
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-800">Top intenties</h2>
-            <div className="h-64">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-base font-semibold text-zinc-800">Top intenties</h2>
+            <div className="h-80">
               {hasMounted ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -223,7 +223,7 @@ export default function Home() {
                       nameKey="intent"
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
+                      outerRadius={110}
                       label={(props) =>
                         typeof props.name === "string" ? props.name.replace(/_/g, " ") : props.name
                       }
