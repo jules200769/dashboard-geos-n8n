@@ -7,6 +7,8 @@ create table if not exists public.lead_queue (
   org_name text not null default '',
   sender_email text not null default '',
   sender_domain text not null default '',
+  phone_country_code text not null default '',
+  phone_number text not null default '',
   subject text not null default '',
   sentiment text not null default 'Unknown',
   sentiment_confidence text not null default 'N/A',

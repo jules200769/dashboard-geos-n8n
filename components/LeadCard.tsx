@@ -37,6 +37,12 @@ export function LeadCard({ lead, onOpen, onSave, onIgnore, isSaving, isIgnoring 
         <p>
           <span className="font-medium">E-mail:</span> {lead.sender_email || "-"}
         </p>
+        {lead.phone_number && (
+          <p>
+            <span className="font-medium">Tel:</span>{" "}
+            {lead.phone_country_code ? `${lead.phone_country_code} ${lead.phone_number}` : lead.phone_number}
+          </p>
+        )}
         <p>
           <span className="font-medium">Domein:</span> {lead.sender_domain || "-"}
         </p>

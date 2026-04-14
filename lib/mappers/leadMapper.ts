@@ -67,6 +67,8 @@ export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
     org_name: asString(payload.org_name || payload.company),
     sender_email: senderEmail,
     sender_domain: senderDomain,
+    phone_country_code: asString(payload.phone_country_code),
+    phone_number: asString(payload.phone_number),
     subject: asString(payload.subject),
     sentiment,
     sentiment_confidence: asString(payload.confidence || payload.sentimentConfidence, "N/A"),
