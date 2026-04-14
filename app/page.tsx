@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import {
   Bar,
   BarChart,
@@ -122,19 +124,20 @@ export default function Home() {
       <main className="mx-auto max-w-[1600px] px-6 py-8 md:px-12">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-4">
-            <a
+            <Link
               href="/"
               className="shrink-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
               aria-label="Ga naar dashboard home"
             >
-              <img
+              <Image
                 src="/logo-geos.png"
                 alt="GEOS Laboratories"
+                width={160}
+                height={40}
                 className="h-10 w-auto"
-                loading="eager"
-                decoding="async"
+                priority
               />
-            </a>
+            </Link>
             <div>
               <h1 className="text-3xl font-semibold text-zinc-900">leadreview-dashboard</h1>
               <p className="text-base text-zinc-600">

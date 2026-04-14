@@ -119,6 +119,29 @@ export function LeadDetailDrawer({
                   />
                 </label>
                 <label className="space-y-1">
+                  <span className="text-xs font-medium text-zinc-600">Telefoonnummer</span>
+                  <div className="flex gap-2">
+                    <select
+                      value={draft.phone_country_code || "+32"}
+                      onChange={(event) => update("phone_country_code", event.target.value)}
+                      className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none"
+                    >
+                      <option value="+32">+32 (BE)</option>
+                      <option value="+31">+31 (NL)</option>
+                      <option value="+33">+33 (FR)</option>
+                      <option value="+49">+49 (DE)</option>
+                      <option value="+44">+44 (UK)</option>
+                      <option value="+1">+1 (US/CA)</option>
+                    </select>
+                    <input
+                      value={draft.phone_number || ""}
+                      onChange={(event) => update("phone_number", event.target.value)}
+                      placeholder="onbekend"
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
+                    />
+                  </div>
+                </label>
+                <label className="space-y-1">
                   <span className="text-xs font-medium text-zinc-600">Domein</span>
                   <input
                     value={draft.sender_domain}

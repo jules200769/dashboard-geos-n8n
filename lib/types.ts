@@ -7,6 +7,8 @@ export interface LeadRecord {
   org_name: string;
   sender_email: string;
   sender_domain: string;
+  phone_country_code?: string;
+  phone_number?: string;
   subject: string;
   sentiment: string;
   sentiment_confidence: string;

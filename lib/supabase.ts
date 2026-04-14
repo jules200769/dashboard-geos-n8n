@@ -9,7 +9,14 @@ export const supabaseBrowserClient = () =>
 
 export const supabaseServerClient = () => {
   if (!supabaseUrl || !supabaseServiceRoleKey) {
-    throw new Error("Supabase server environment variables are missing.");
+    const missing = [
+      !supabaseUrl ? "NEXT_PUBLIC_SUPABASE_URL" : null,
+      !supabaseServiceRoleKey ? "SUPABASE_SERVICE_ROLE_KEY" : null,
+    ].filter(Boolean);
+    throw new Error(
+      `Supabase server environment variables are missing: ${missing.join(", ")}. ` +
+        `Either set them in .env.local or enable MOCK_LEADS to run without Supabase.`,
+    );
   }
   return createClient(supabaseUrl, supabaseServiceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
