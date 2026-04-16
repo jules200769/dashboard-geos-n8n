@@ -28,9 +28,16 @@ export function LeadCard({ lead, onOpen, onSave, onIgnore, isSaving, isIgnoring 
           </h3>
           <p className="text-base text-zinc-600">{lead.org_name || "Onbekend bedrijf"}</p>
         </div>
-        <span className={`rounded-full px-2.5 py-1 text-sm font-medium ${urgencyTone}`}>
-          Urgentie {lead.urgency_score}
-        </span>
+        <div className="flex flex-col items-end gap-1">
+          <span className={`rounded-full px-2.5 py-1 text-sm font-medium ${urgencyTone}`}>
+            Urgentie {lead.urgency_score}
+          </span>
+          {lead.industry && lead.industry !== "diverse" && (
+            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+              {lead.industry}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="space-y-1 text-base text-zinc-700">

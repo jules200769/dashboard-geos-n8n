@@ -1,5 +1,5 @@
 import { supabaseServerClient } from "../supabase";
-import type { LeadRecord, MetricsResponse } from "../types";
+import type { LeadRecord, MetricsResponse, Industry } from "../types";
 
 const TABLE = "lead_queue";
 
@@ -20,7 +20,7 @@ let mockLeadsStore: LeadRecord[] | null = null;
 function getMockStore(): LeadRecord[] {
   if (mockLeadsStore) return mockLeadsStore;
 
-  const base: Omit<LeadRecord, "id" | "subject" | "email_body" | "contact_name" | "org_name" | "sender_email" | "sender_domain" | "sentiment" | "primary_topic" | "intent" | "urgency_score" | "lead_rating" | "status" | "created_at" | "updated_at" | "saved_at"> =
+  const base: Omit<LeadRecord, "id" | "subject" | "email_body" | "contact_name" | "org_name" | "sender_email" | "sender_domain" | "sentiment" | "primary_topic" | "intent" | "urgency_score" | "lead_rating" | "status" | "created_at" | "updated_at" | "saved_at" | "industry"> =
     {
       source_message_id: null,
       phone_country_code: "+31",
@@ -51,6 +51,7 @@ function getMockStore(): LeadRecord[] {
       intent: "Request demo",
       urgency_score: 7,
       lead_rating: "Hot",
+      industry: "concrete",
       status: "open",
       email_body:
         "Hoi! Kunnen we een demo plannen? We zoeken een live dashboard met GEOs voor ons sales team. Wat is de lead time en prijsindicatie?",
@@ -71,6 +72,7 @@ function getMockStore(): LeadRecord[] {
       intent: "Ask pricing",
       urgency_score: 4,
       lead_rating: "Warm",
+      industry: "cement",
       status: "saved",
       email_body:
         "Hi team — can you share pricing tiers and whether this integrates with our existing reporting pipeline? A quick overview would help.",
@@ -91,6 +93,7 @@ function getMockStore(): LeadRecord[] {
       intent: "Evaluate",
       urgency_score: 2,
       lead_rating: "Cold",
+      industry: "diverse",
       status: "open",
       email_body:
         "We’re evaluating alternatives. Not convinced this will cover our use case — do you support custom segments and exports?",
@@ -155,6 +158,7 @@ export async function upsertLead(lead: Partial<LeadRecord>): Promise<LeadRecord>
         budget_mentioned: lead.budget_mentioned ?? false,
         event_referenced: lead.event_referenced ?? "",
         suggested_action: lead.suggested_action ?? "",
+        industry: (lead.industry ?? "diverse") as Industry,
         email_body: lead.email_body ?? "",
         exists_in_salesforce: lead.exists_in_salesforce ?? false,
         matched_in: lead.matched_in ?? [],

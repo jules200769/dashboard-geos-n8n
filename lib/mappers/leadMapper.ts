@@ -1,4 +1,5 @@
-import type { LeadRecord } from "../types";
+import type { LeadRecord, Industry } from "../types";
+import { INDUSTRY_OPTIONS } from "../types";
 
 type AnyJson = Record<string, unknown>;
 
@@ -38,6 +39,12 @@ function inferDomain(email: string, fallback: string): string {
   if (fallback) return fallback.toLowerCase();
   const parts = email.split("@");
   return parts[1]?.trim().toLowerCase() ?? "";
+}
+
+function toIndustry(value: unknown): Industry {
+  const raw = asString(value, "diverse").trim().toLowerCase();
+  const match = INDUSTRY_OPTIONS.find((opt) => opt.toLowerCase() === raw);
+  return match ?? "diverse";
 }
 
 function inferLeadRating(sentiment: string, urgency: number): "Hot" | "Warm" | "Cold" {
@@ -80,6 +87,7 @@ export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
     event_referenced: asString(payload.event_referenced),
     suggested_action: asString(payload.suggested_action),
     email_body: asString(payload.emailBody || payload.email_body || payload.text),
+    industry: toIndustry(payload.industry),
     exists_in_salesforce: asBoolean(payload.existsInSalesforce),
     matched_in: toMatchedIn(payload.matchedIn),
     match_reason: asString(payload.reason),
@@ -102,6 +110,7 @@ export function mapLeadForSave(lead: LeadRecord): Record<string, unknown> {
     primary_topic: lead.primary_topic,
     intent: lead.intent,
     suggested_action: lead.suggested_action,
+    industry: lead.industry,
     lead_rating: lead.lead_rating,
     matched_in: lead.matched_in,
     match_reason: lead.match_reason,

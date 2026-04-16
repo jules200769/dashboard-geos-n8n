@@ -1,5 +1,26 @@
 export type LeadStatus = "open" | "saved";
 
+export const INDUSTRY_OPTIONS = [
+  "admixtures",
+  "aggregates (incl. armourstone)",
+  "concrete",
+  "natural stone (incl. rocks)",
+  "soil",
+  "diverse",
+  "masonry",
+  "prefabricated concrete",
+  "cement",
+  "fly ash",
+  "gypsum",
+  "slags",
+  "bitumen",
+  "fillers",
+  "asphalt",
+  "competitor",
+] as const;
+
+export type Industry = (typeof INDUSTRY_OPTIONS)[number];
+
 export interface LeadRecord {
   id: string;
   source_message_id: string | null;
@@ -19,6 +40,7 @@ export interface LeadRecord {
   budget_mentioned: boolean;
   event_referenced: string;
   suggested_action: string;
+  industry: Industry;
   email_body: string;
   exists_in_salesforce: boolean;
   matched_in: string[];

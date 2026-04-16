@@ -2,6 +2,59 @@
 
 import { useEffect, useState } from "react";
 import type { LeadRecord } from "@/lib/types";
+import { INDUSTRY_OPTIONS } from "@/lib/types";
+
+function IndustrySelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: LeadRecord["industry"]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full items-center justify-between rounded-lg border border-zinc-300 bg-white px-3 py-2 text-left text-sm text-zinc-900 hover:bg-zinc-50"
+      >
+        <span>
+          <span className="text-xs font-medium text-zinc-600">Industrie: </span>
+          {value || "diverse"}
+        </span>
+        <svg
+          className={`h-4 w-4 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="max-h-48 overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg">
+          {INDUSTRY_OPTIONS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => {
+                onChange(option);
+                setOpen(false);
+              }}
+              className={`w-full px-3 py-2 text-left text-sm hover:bg-zinc-100 ${
+                value === option ? "bg-zinc-100 font-medium text-zinc-900" : "text-zinc-700"
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface LeadDetailDrawerProps {
   lead: LeadRecord | null;
@@ -149,6 +202,10 @@ export function LeadDetailDrawer({
                     className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
                   />
                 </label>
+                <IndustrySelect
+                  value={draft.industry}
+                  onChange={(val) => update("industry", val)}
+                />
                 <label className="space-y-1">
                   <span className="text-xs font-medium text-zinc-600">Aanbevolen actie</span>
                   <textarea
@@ -163,6 +220,7 @@ export function LeadDetailDrawer({
                 <p className="font-medium text-zinc-900">Context voor Salesforce review</p>
                 <p className="mt-1">Leadscore: {draft.lead_rating}</p>
                 <p>Intentie: {draft.intent || "-"}</p>
+                <p>Industrie: {draft.industry || "diverse"}</p>
                 <p>Hoofdonderwerp: {draft.primary_topic || "-"}</p>
                 <p>Match gevonden in: {draft.matched_in.join(", ") || "Geen overeenkomst"}</p>
                 <p>Reden not-found: {draft.match_reason || "Niet gevonden in Salesforce"}</p>

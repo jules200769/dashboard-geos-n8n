@@ -19,6 +19,7 @@ create table if not exists public.lead_queue (
   budget_mentioned boolean not null default false,
   event_referenced text not null default '',
   suggested_action text not null default '',
+  industry text not null default 'diverse',
   exists_in_salesforce boolean not null default false,
   matched_in text[] not null default '{}',
   match_reason text not null default '',
