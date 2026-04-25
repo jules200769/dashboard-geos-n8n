@@ -239,6 +239,48 @@ export async function markLeadSaved(
   return data as LeadRecord;
 }
 
+export async function markLeadRechecked(
+  id: string,
+  result: {
+    existsInSalesforce: boolean;
+    matchedIn: string[];
+    reason: string;
+    rawPayload: Record<string, unknown>;
+  },
+): Promise<LeadRecord> {
+  if (envFlag("MOCK_LEADS")) {
+    const store = getMockStore();
+    const idx = store.findIndex((l) => l.id === id);
+    if (idx < 0) throw new Error("Lead not found");
+    const now = new Date().toISOString();
+    const updated: LeadRecord = {
+      ...store[idx],
+      exists_in_salesforce: result.existsInSalesforce,
+      matched_in: result.matchedIn,
+      match_reason: result.reason,
+      raw_payload: result.rawPayload,
+      updated_at: now,
+    };
+    store[idx] = updated;
+    return updated;
+  }
+
+  const supabase = supabaseServerClient();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .update({
+      exists_in_salesforce: result.existsInSalesforce,
+      matched_in: result.matchedIn,
+      match_reason: result.reason,
+      raw_payload: result.rawPayload,
+    })
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as LeadRecord;
+}
+
 function startOfTodayIso(): string {
   const now = new Date();
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));

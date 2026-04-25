@@ -7,17 +7,32 @@ interface LeadCardProps {
   onOpen: (lead: LeadRecord) => void;
   onSave: (lead: LeadRecord) => void;
   onIgnore: (lead: LeadRecord) => void;
+  onRecheck: (lead: LeadRecord) => void;
   isSaving: boolean;
   isIgnoring: boolean;
+  isRechecking: boolean;
 }
 
-export function LeadCard({ lead, onOpen, onSave, onIgnore, isSaving, isIgnoring }: LeadCardProps) {
+export function LeadCard({
+  lead,
+  onOpen,
+  onSave,
+  onIgnore,
+  onRecheck,
+  isSaving,
+  isIgnoring,
+  isRechecking,
+}: LeadCardProps) {
   const urgencyTone =
     lead.urgency_score >= 7
       ? "bg-red-100 text-red-700"
       : lead.urgency_score >= 4
         ? "bg-amber-100 text-amber-700"
         : "bg-emerald-100 text-emerald-700";
+  const hasRecheckResult = Boolean(lead.match_reason || lead.matched_in.length > 0);
+  const matchTone = lead.exists_in_salesforce
+    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+    : "border-zinc-200 bg-zinc-50 text-zinc-700";
 
   return (
     <article className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -55,6 +70,16 @@ export function LeadCard({ lead, onOpen, onSave, onIgnore, isSaving, isIgnoring 
         </p>
       </div>
 
+      {hasRecheckResult && (
+        <div className={`mt-3 rounded-xl border px-3 py-2 text-sm ${matchTone}`}>
+          <p className="font-medium">
+            Salesforce: {lead.exists_in_salesforce ? "gevonden" : "niet gevonden"}
+            {lead.matched_in.length > 0 ? ` (${lead.matched_in.join(", ")})` : ""}
+          </p>
+          {lead.match_reason && <p className="mt-1 line-clamp-2">{lead.match_reason}</p>}
+        </div>
+      )}
+
       <div className="mt-4 flex items-center gap-2">
         <button
           type="button"
@@ -81,10 +106,24 @@ export function LeadCard({ lead, onOpen, onSave, onIgnore, isSaving, isIgnoring 
         </button>
         <button
           type="button"
+          disabled={isRechecking}
+          onClick={() => onRecheck(lead)}
           className="flex h-[42px] w-[42px] items-center justify-center rounded-lg border border-zinc-300 text-zinc-700 hover:bg-zinc-50"
-          title="Reload"
+          title={isRechecking ? "Salesforce-controle bezig" : "Salesforce opnieuw controleren"}
+          aria-label={isRechecking ? "Salesforce-controle bezig" : "Salesforce opnieuw controleren"}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            className={isRechecking ? "animate-spin" : undefined}
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
             <path d="M3 3v5h5" />
           </svg>

@@ -10,6 +10,8 @@ const API_ERROR_NL: Record<string, string> = {
   "Save failed": "Opslaan mislukt.",
   "Lead not found": "Lead niet gevonden.",
   "Failed to load leads": "Leads laden mislukt.",
+  "Re-check failed": "Salesforce-controle mislukt.",
+  "Re-check webhook not configured": "Salesforce-controle is nog niet geconfigureerd.",
 };
 
 function translateApiError(message: string): string {
@@ -52,6 +54,19 @@ export async function saveLead(id: string): Promise<{ message: string }> {
   const payload = await response.json();
   if (!response.ok) {
     const raw = typeof payload.error === "string" ? payload.error : "Opslaan mislukt.";
+    throw new Error(translateApiError(raw));
+  }
+  return payload;
+}
+
+export async function recheckLead(id: string): Promise<{ lead: LeadRecord; message: string }> {
+  const response = await fetch(`/api/leads/${id}/recheck`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    const raw = typeof payload.error === "string" ? payload.error : "Salesforce-controle mislukt.";
     throw new Error(translateApiError(raw));
   }
   return payload;

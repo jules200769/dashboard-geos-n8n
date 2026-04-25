@@ -20,7 +20,7 @@ import {
 } from "recharts";
 import { LeadCard } from "@/components/LeadCard";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
-import { fetchLeads, ignoreLead, saveLead } from "@/lib/api";
+import { fetchLeads, ignoreLead, recheckLead, saveLead } from "@/lib/api";
 import type { LeadRecord, MetricsResponse } from "@/lib/types";
 
 const COLORS = ['#7c3aed', '#0284c7', '#16a34a', '#ea580c', '#e11d48', '#d97706'];
@@ -51,6 +51,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [ignoringId, setIgnoringId] = useState<string | null>(null);
+  const [recheckingId, setRecheckingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string>("");
   const [hasMounted, setHasMounted] = useState(false);
 
@@ -116,6 +117,21 @@ export default function Home() {
       setFeedback(error instanceof Error ? error.message : "Opslaan mislukt.");
     } finally {
       setSavingId(null);
+    }
+  };
+
+  const handleRecheck = async (lead: LeadRecord) => {
+    setRecheckingId(lead.id);
+    setFeedback("");
+    try {
+      const result = await recheckLead(lead.id);
+      setLeads((current) => current.map((item) => (item.id === lead.id ? result.lead : item)));
+      setSelectedLead((current) => (current && current.id === lead.id ? result.lead : current));
+      setFeedback(result.message);
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Salesforce-controle mislukt.");
+    } finally {
+      setRecheckingId(null);
     }
   };
 
@@ -203,8 +219,10 @@ export default function Home() {
                     onOpen={setSelectedLead}
                     onSave={handleSave}
                     onIgnore={handleIgnore}
+                    onRecheck={handleRecheck}
                     isSaving={savingId === lead.id}
                     isIgnoring={ignoringId === lead.id}
+                    isRechecking={recheckingId === lead.id}
                   />
                 ))
               )}
