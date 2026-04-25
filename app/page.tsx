@@ -53,6 +53,7 @@ export default function Home() {
   const [ignoringId, setIgnoringId] = useState<string | null>(null);
   const [recheckingId, setRecheckingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ text: string; type: "success" | "error" | "info" } | null>(null);
+  const [notFoundModalLead, setNotFoundModalLead] = useState<LeadRecord | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
@@ -138,10 +139,15 @@ export default function Home() {
       
       const name = lead.contact_name || lead.sender_email || "Lead";
       const isInSf = result.lead.exists_in_salesforce;
-      setFeedback({
-        text: `${name} staat ${isInSf ? "wel" : "niet"} in Salesforce.`,
-        type: isInSf ? "success" : "error"
-      });
+      
+      if (isInSf) {
+        setFeedback({
+          text: `${name} staat wel in Salesforce.`,
+          type: "error"
+        });
+      } else {
+        setNotFoundModalLead(result.lead);
+      }
     } catch (error) {
       setFeedback({ text: error instanceof Error ? error.message : "Salesforce-controle mislukt.", type: "error" });
     } finally {
@@ -321,6 +327,49 @@ export default function Home() {
         </section>
 
       </main>
+
+      {notFoundModalLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg rounded-2xl bg-zinc-100 p-6 shadow-2xl">
+            <button 
+              onClick={() => setNotFoundModalLead(null)}
+              className="absolute left-4 top-4 rounded-full p-2 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            <div className="mb-6 mt-4 flex flex-col items-center text-center">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-zinc-900">
+                {notFoundModalLead.contact_name || notFoundModalLead.sender_email || "Lead"} staat niet in Salesforce
+              </h2>
+            </div>
+
+            <div className="mb-6">
+              <LeadCard lead={notFoundModalLead} onOpen={() => {}} onSave={() => {}} onIgnore={() => {}} onRecheck={() => {}} isSaving={false} isIgnoring={false} isRechecking={false} hideActions={true} />
+            </div>
+
+            <div className="flex justify-center">
+              <button
+                onClick={() => {
+                  setSelectedLead(notFoundModalLead);
+                  setNotFoundModalLead(null);
+                }}
+                className="rounded-lg bg-zinc-900 px-8 py-3 text-base font-medium text-white hover:bg-zinc-800"
+              >
+                Bekijk
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <LeadDetailDrawer
         lead={selectedLead}
