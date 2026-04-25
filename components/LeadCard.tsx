@@ -29,13 +29,14 @@ export function LeadCard({
       : lead.urgency_score >= 4
         ? "bg-amber-100 text-amber-700"
         : "bg-emerald-100 text-emerald-700";
-  const hasRecheckResult = Boolean(lead.match_reason || lead.matched_in.length > 0);
-  const matchTone = lead.exists_in_salesforce
-    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-    : "border-zinc-200 bg-zinc-50 text-zinc-700";
-
   return (
-    <article className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+    <article
+      className={`rounded-2xl border bg-white p-5 transition-all duration-300 ${
+        isRechecking
+          ? "border-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.5)] animate-pulse"
+          : "border-zinc-200 shadow-sm"
+      }`}
+    >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-zinc-900">
@@ -69,16 +70,6 @@ export function LeadCard({
           <span className="font-medium">Domein:</span> {lead.sender_domain || "-"}
         </p>
       </div>
-
-      {hasRecheckResult && (
-        <div className={`mt-3 rounded-xl border px-3 py-2 text-sm ${matchTone}`}>
-          <p className="font-medium">
-            Salesforce: {lead.exists_in_salesforce ? "gevonden" : "niet gevonden"}
-            {lead.matched_in.length > 0 ? ` (${lead.matched_in.join(", ")})` : ""}
-          </p>
-          {lead.match_reason && <p className="mt-1 line-clamp-2">{lead.match_reason}</p>}
-        </div>
-      )}
 
       <div className="mt-4 flex items-center gap-2">
         <button
@@ -114,6 +105,7 @@ export function LeadCard({
         >
           <svg
             className={isRechecking ? "animate-spin" : undefined}
+            style={isRechecking ? { animationDirection: "reverse" } : undefined}
             xmlns="http://www.w3.org/2000/svg"
             width="16"
             height="16"

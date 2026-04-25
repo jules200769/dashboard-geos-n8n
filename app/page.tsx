@@ -52,8 +52,15 @@ export default function Home() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [ignoringId, setIgnoringId] = useState<string | null>(null);
   const [recheckingId, setRecheckingId] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<string>("");
+  const [feedback, setFeedback] = useState<{ text: string; type: "success" | "error" | "info" } | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    if (feedback) {
+      const timer = setTimeout(() => setFeedback(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [feedback]);
 
   const loadDashboard = async () => {
     setIsLoading(true);
@@ -62,7 +69,7 @@ export default function Home() {
       setLeads(response.leads);
       setMetrics(response.metrics ?? emptyMetrics);
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Kon dashboard niet laden.");
+      setFeedback({ text: error instanceof Error ? error.message : "Kon dashboard niet laden.", type: "error" });
     } finally {
       setIsLoading(false);
     }
@@ -82,13 +89,14 @@ export default function Home() {
 
   const handleIgnore = async (lead: LeadRecord) => {
     setIgnoringId(lead.id);
-    setFeedback("");
+    setFeedback(null);
     try {
       await ignoreLead(lead.id);
       setLeads((current) => current.filter((item) => item.id !== lead.id));
       if (selectedLead?.id === lead.id) setSelectedLead(null);
+      setFeedback({ text: "Lead verwijderd.", type: "info" });
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Verwijderen mislukt.");
+      setFeedback({ text: error instanceof Error ? error.message : "Verwijderen mislukt.", type: "error" });
     } finally {
       setIgnoringId(null);
     }
@@ -96,7 +104,7 @@ export default function Home() {
 
   const handleSave = async (lead: LeadRecord) => {
     setSavingId(lead.id);
-    setFeedback("");
+    setFeedback(null);
     try {
       const result = await saveLead(lead.id);
       setLeads((current) =>
@@ -111,10 +119,10 @@ export default function Home() {
           ? { ...current, status: "saved", saved_at: new Date().toISOString() }
           : current,
       );
-      setFeedback(result.message);
+      setFeedback({ text: result.message, type: "success" });
       await loadDashboard();
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Opslaan mislukt.");
+      setFeedback({ text: error instanceof Error ? error.message : "Opslaan mislukt.", type: "error" });
     } finally {
       setSavingId(null);
     }
@@ -122,14 +130,20 @@ export default function Home() {
 
   const handleRecheck = async (lead: LeadRecord) => {
     setRecheckingId(lead.id);
-    setFeedback("");
+    setFeedback(null);
     try {
       const result = await recheckLead(lead.id);
       setLeads((current) => current.map((item) => (item.id === lead.id ? result.lead : item)));
       setSelectedLead((current) => (current && current.id === lead.id ? result.lead : current));
-      setFeedback(result.message);
+      
+      const name = lead.contact_name || lead.sender_email || "Lead";
+      const isInSf = result.lead.exists_in_salesforce;
+      setFeedback({
+        text: `${name} staat ${isInSf ? "wel" : "niet"} in Salesforce.`,
+        type: isInSf ? "success" : "error"
+      });
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Salesforce-controle mislukt.");
+      setFeedback({ text: error instanceof Error ? error.message : "Salesforce-controle mislukt.", type: "error" });
     } finally {
       setRecheckingId(null);
     }
@@ -171,8 +185,38 @@ export default function Home() {
         </header>
 
         {feedback && (
-          <div className="mb-5 rounded-xl border border-zinc-200 bg-white px-5 py-3.5 text-base text-zinc-700">
-            {feedback}
+          <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border bg-white px-5 py-4 text-base shadow-xl transition-all duration-300">
+            {feedback.type === "success" && (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+            )}
+            {feedback.type === "error" && (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </div>
+            )}
+            {feedback.type === "info" && (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+              </div>
+            )}
+            <div className="font-medium text-zinc-800">{feedback.text}</div>
+            <button onClick={() => setFeedback(null)} className="ml-2 shrink-0 text-zinc-400 hover:text-zinc-600" aria-label="Sluiten">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
         )}
 
