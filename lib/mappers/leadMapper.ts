@@ -1,4 +1,4 @@
-import type { LeadRecord, Industry } from "../types";
+import type { LeadRecord, Industry, SalesforceMode } from "../types";
 import { INDUSTRY_OPTIONS } from "../types";
 
 type AnyJson = Record<string, unknown>;
@@ -28,6 +28,10 @@ function toMatchedIn(value: unknown): string[] {
   return single ? [single] : [];
 }
 
+function asRecord(value: unknown): AnyJson {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as AnyJson) : {};
+}
+
 function normalizeEmail(value: unknown): string {
   const raw = asString(value).trim();
   const bracketMatch = raw.match(/<([^>]+)>/);
@@ -53,6 +57,23 @@ function inferLeadRating(sentiment: string, urgency: number): "Hot" | "Warm" | "
   return "Warm";
 }
 
+function inferSalesforceMode(payload: AnyJson, matchedIn: string[]): SalesforceMode {
+  const explicit = asString(payload.salesforce_mode);
+  if (
+    explicit === "create_contact_under_existing_account" ||
+    explicit === "create_account_then_contact"
+  ) {
+    return explicit;
+  }
+
+  const accountFound =
+    asBoolean(payload.accountFound) ||
+    matchedIn.some((match) => match.toLowerCase() === "account") ||
+    Boolean(asString(payload.matchedAccountId || payload.matched_account_id));
+
+  return accountFound ? "create_contact_under_existing_account" : "create_account_then_contact";
+}
+
 export interface LeadInsertPayload extends Omit<LeadRecord, "id" | "created_at" | "updated_at" | "saved_at" | "save_payload"> {
   save_payload?: Record<string, unknown>;
 }
@@ -67,6 +88,10 @@ export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
   const senderDomain = inferDomain(senderEmail, asString(payload.sender_domain));
   const sentiment = asString(payload.sentiment, "Unknown");
   const urgency = Math.max(0, Math.min(10, asNumber(payload.urgency_score, 0)));
+  const matchedIn = toMatchedIn(payload.matchedIn || payload.matched_in);
+  const prefillAccount = asRecord(payload.prefillAccount);
+  const salesforceMode = inferSalesforceMode(payload, matchedIn);
+  const accountName = asString(prefillAccount.name || payload.account_name || payload.org_name || payload.company);
 
   return {
     source_message_id: asString(payload.message_id || payload.id) || null,
@@ -89,8 +114,20 @@ export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
     email_body: asString(payload.emailBody || payload.email_body || payload.text),
     industry: toIndustry(payload.industry),
     exists_in_salesforce: asBoolean(payload.existsInSalesforce),
-    matched_in: toMatchedIn(payload.matchedIn),
+    matched_in: matchedIn,
     match_reason: asString(payload.reason),
+    salesforce_mode: salesforceMode,
+    matched_account_id: asString(payload.matchedAccountId || payload.matched_account_id),
+    matched_account_name: asString(payload.matchedAccountName || payload.matched_account_name),
+    matched_account_website: asString(payload.matchedAccountWebsite || payload.matched_account_website),
+    account_name: accountName,
+    account_number: asString(prefillAccount.accountNumber || prefillAccount.account_number || payload.account_number),
+    account_description: asString(
+      prefillAccount.description ||
+        payload.account_description ||
+        payload.suggested_action ||
+        payload.reason,
+    ),
     lead_rating: inferLeadRating(sentiment, urgency),
     status: "open",
     raw_payload: payload,
@@ -114,6 +151,27 @@ export function mapLeadForSave(lead: LeadRecord): Record<string, unknown> {
     lead_rating: lead.lead_rating,
     matched_in: lead.matched_in,
     match_reason: lead.match_reason,
+    salesforce_mode: lead.salesforce_mode,
+    matched_account_id: lead.matched_account_id,
+    matched_account_name: lead.matched_account_name,
+    matched_account_website: lead.matched_account_website,
+    account_name: lead.account_name,
+    account_number: lead.account_number,
+    account_description: lead.account_description,
+    contact: {
+      full_name: lead.contact_name,
+      email: lead.sender_email,
+      phone_country_code: lead.phone_country_code,
+      phone_number: lead.phone_number,
+      description: lead.suggested_action,
+    },
+    account: {
+      id: lead.matched_account_id,
+      name: lead.account_name || lead.matched_account_name || lead.org_name,
+      number: lead.account_number,
+      description: lead.account_description,
+      website: lead.matched_account_website || (lead.sender_domain ? `https://${lead.sender_domain}` : ""),
+    },
     saved_at: new Date().toISOString(),
   };
 }

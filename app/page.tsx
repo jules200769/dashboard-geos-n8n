@@ -107,17 +107,17 @@ export default function Home() {
     setSavingId(lead.id);
     setFeedback(null);
     try {
-      const result = await saveLead(lead.id);
+      const result = await saveLead(lead.id, lead);
       setLeads((current) =>
         current.map((item) =>
           item.id === lead.id
-            ? { ...item, status: "saved", saved_at: new Date().toISOString() }
+            ? result.lead
             : item,
         ),
       );
       setSelectedLead((current) =>
         current && current.id === lead.id
-          ? { ...current, status: "saved", saved_at: new Date().toISOString() }
+          ? result.lead
           : current,
       );
       setFeedback({ text: result.message, type: "success" });
@@ -267,7 +267,6 @@ export default function Home() {
                     key={lead.id}
                     lead={lead}
                     onOpen={setSelectedLead}
-                    onSave={handleSave}
                     onIgnore={handleIgnore}
                     onRecheck={handleRecheck}
                     isSaving={savingId === lead.id}
@@ -353,7 +352,7 @@ export default function Home() {
             </div>
 
             <div className="mb-6">
-              <LeadCard lead={notFoundModalLead} onOpen={() => {}} onSave={() => {}} onIgnore={() => {}} onRecheck={() => {}} isSaving={false} isIgnoring={false} isRechecking={false} hideActions={true} />
+              <LeadCard lead={notFoundModalLead} onOpen={() => {}} onIgnore={() => {}} onRecheck={() => {}} isSaving={false} isIgnoring={false} isRechecking={false} hideActions={true} />
             </div>
 
             <div className="flex justify-center">

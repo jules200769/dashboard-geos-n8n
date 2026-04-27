@@ -1,4 +1,7 @@
 export type LeadStatus = "open" | "saved";
+export type SalesforceMode =
+  | "create_contact_under_existing_account"
+  | "create_account_then_contact";
 
 export const INDUSTRY_OPTIONS = [
   "admixtures",
@@ -45,6 +48,13 @@ export interface LeadRecord {
   exists_in_salesforce: boolean;
   matched_in: string[];
   match_reason: string;
+  salesforce_mode: SalesforceMode;
+  matched_account_id: string;
+  matched_account_name: string;
+  matched_account_website: string;
+  account_name: string;
+  account_number: string;
+  account_description: string;
   lead_rating: "Hot" | "Warm" | "Cold";
   status: LeadStatus;
   save_payload: Record<string, unknown>;

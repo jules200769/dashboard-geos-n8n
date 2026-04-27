@@ -33,6 +33,13 @@ function getMockStore(): LeadRecord[] {
       exists_in_salesforce: false,
       matched_in: [],
       match_reason: "",
+      salesforce_mode: "create_account_then_contact",
+      matched_account_id: "",
+      matched_account_name: "",
+      matched_account_website: "",
+      account_name: "",
+      account_number: "",
+      account_description: "",
       save_payload: {},
       raw_payload: {},
     };
@@ -163,6 +170,13 @@ export async function upsertLead(lead: Partial<LeadRecord>): Promise<LeadRecord>
         exists_in_salesforce: lead.exists_in_salesforce ?? false,
         matched_in: lead.matched_in ?? [],
         match_reason: lead.match_reason ?? "",
+        salesforce_mode: lead.salesforce_mode ?? "create_account_then_contact",
+        matched_account_id: lead.matched_account_id ?? "",
+        matched_account_name: lead.matched_account_name ?? "",
+        matched_account_website: lead.matched_account_website ?? "",
+        account_name: lead.account_name ?? lead.org_name ?? "",
+        account_number: lead.account_number ?? "",
+        account_description: lead.account_description ?? "",
         lead_rating: lead.lead_rating ?? "Warm",
         status: lead.status ?? "open",
         save_payload: lead.save_payload ?? {},
@@ -245,6 +259,13 @@ export async function markLeadRechecked(
     existsInSalesforce: boolean;
     matchedIn: string[];
     reason: string;
+    salesforceMode?: LeadRecord["salesforce_mode"];
+    matchedAccountId?: string;
+    matchedAccountName?: string;
+    matchedAccountWebsite?: string;
+    accountName?: string;
+    accountNumber?: string;
+    accountDescription?: string;
     rawPayload: Record<string, unknown>;
   },
 ): Promise<LeadRecord> {
@@ -258,6 +279,13 @@ export async function markLeadRechecked(
       exists_in_salesforce: result.existsInSalesforce,
       matched_in: result.matchedIn,
       match_reason: result.reason,
+      salesforce_mode: result.salesforceMode ?? store[idx].salesforce_mode,
+      matched_account_id: result.matchedAccountId ?? store[idx].matched_account_id,
+      matched_account_name: result.matchedAccountName ?? store[idx].matched_account_name,
+      matched_account_website: result.matchedAccountWebsite ?? store[idx].matched_account_website,
+      account_name: result.accountName ?? store[idx].account_name,
+      account_number: result.accountNumber ?? store[idx].account_number,
+      account_description: result.accountDescription ?? store[idx].account_description,
       raw_payload: result.rawPayload,
       updated_at: now,
     };
@@ -266,14 +294,23 @@ export async function markLeadRechecked(
   }
 
   const supabase = supabaseServerClient();
+  const updatePayload: Partial<LeadRecord> = {
+    exists_in_salesforce: result.existsInSalesforce,
+    matched_in: result.matchedIn,
+    match_reason: result.reason,
+    raw_payload: result.rawPayload,
+  };
+  if (result.salesforceMode) updatePayload.salesforce_mode = result.salesforceMode;
+  if (result.matchedAccountId !== undefined) updatePayload.matched_account_id = result.matchedAccountId;
+  if (result.matchedAccountName !== undefined) updatePayload.matched_account_name = result.matchedAccountName;
+  if (result.matchedAccountWebsite !== undefined) updatePayload.matched_account_website = result.matchedAccountWebsite;
+  if (result.accountName !== undefined) updatePayload.account_name = result.accountName;
+  if (result.accountNumber !== undefined) updatePayload.account_number = result.accountNumber;
+  if (result.accountDescription !== undefined) updatePayload.account_description = result.accountDescription;
+
   const { data, error } = await supabase
     .from(TABLE)
-    .update({
-      exists_in_salesforce: result.existsInSalesforce,
-      matched_in: result.matchedIn,
-      match_reason: result.reason,
-      raw_payload: result.rawPayload,
-    })
+    .update(updatePayload)
     .eq("id", id)
     .select("*")
     .single();

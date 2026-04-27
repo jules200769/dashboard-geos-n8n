@@ -5,7 +5,6 @@ import type { LeadRecord } from "@/lib/types";
 interface LeadCardProps {
   lead: LeadRecord;
   onOpen: (lead: LeadRecord) => void;
-  onSave: (lead: LeadRecord) => void;
   onIgnore: (lead: LeadRecord) => void;
   onRecheck: (lead: LeadRecord) => void;
   isSaving: boolean;
@@ -17,7 +16,6 @@ interface LeadCardProps {
 export function LeadCard({
   lead,
   onOpen,
-  onSave,
   onIgnore,
   onRecheck,
   isSaving,
@@ -25,6 +23,10 @@ export function LeadCard({
   isRechecking,
   hideActions,
 }: LeadCardProps) {
+  const primaryActionLabel =
+    lead.salesforce_mode === "create_contact_under_existing_account"
+      ? "Contact maken"
+      : "Volgende";
   const urgencyTone =
     lead.urgency_score >= 7
       ? "bg-red-100 text-red-700"
@@ -93,10 +95,10 @@ export function LeadCard({
           <button
             type="button"
             disabled={isSaving || lead.status === "saved"}
-            onClick={() => onSave(lead)}
+            onClick={() => onOpen(lead)}
             className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-zinc-400"
           >
-            {lead.status === "saved" ? "Opgeslagen" : isSaving ? "Bezig met opslaan..." : "Opslaan"}
+            {lead.status === "saved" ? "Opgeslagen" : isSaving ? "Bezig met opslaan..." : primaryActionLabel}
           </button>
           <button
             type="button"

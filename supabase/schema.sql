@@ -23,6 +23,13 @@ create table if not exists public.lead_queue (
   exists_in_salesforce boolean not null default false,
   matched_in text[] not null default '{}',
   match_reason text not null default '',
+  salesforce_mode text not null default 'create_account_then_contact' check (salesforce_mode in ('create_contact_under_existing_account', 'create_account_then_contact')),
+  matched_account_id text not null default '',
+  matched_account_name text not null default '',
+  matched_account_website text not null default '',
+  account_name text not null default '',
+  account_number text not null default '',
+  account_description text not null default '',
   lead_rating text not null default 'Warm',
   status text not null default 'open' check (status in ('open', 'saved')),
   save_payload jsonb not null default '{}'::jsonb,
@@ -38,6 +45,14 @@ create index if not exists lead_queue_created_at_idx on public.lead_queue(create
 create index if not exists lead_queue_sender_email_idx on public.lead_queue(sender_email);
 create index if not exists lead_queue_primary_topic_idx on public.lead_queue(primary_topic);
 create index if not exists lead_queue_intent_idx on public.lead_queue(intent);
+
+alter table public.lead_queue add column if not exists salesforce_mode text not null default 'create_account_then_contact';
+alter table public.lead_queue add column if not exists matched_account_id text not null default '';
+alter table public.lead_queue add column if not exists matched_account_name text not null default '';
+alter table public.lead_queue add column if not exists matched_account_website text not null default '';
+alter table public.lead_queue add column if not exists account_name text not null default '';
+alter table public.lead_queue add column if not exists account_number text not null default '';
+alter table public.lead_queue add column if not exists account_description text not null default '';
 
 create or replace function public.set_updated_at()
 returns trigger

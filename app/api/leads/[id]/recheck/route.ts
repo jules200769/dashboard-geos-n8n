@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLeadById, markLeadRechecked } from "@/lib/data/leadRepository";
+import type { SalesforceMode } from "@/lib/types";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -9,6 +10,14 @@ interface RecheckResult {
   existsInSalesforce: boolean;
   matchedIn: string[];
   reason: string;
+  accountFound: boolean;
+  salesforceMode: SalesforceMode;
+  matchedAccountId: string;
+  matchedAccountName: string;
+  matchedAccountWebsite: string;
+  accountName: string;
+  accountNumber: string;
+  accountDescription: string;
   checkedAt?: string;
   source?: string;
   rawAgentOutput?: unknown;
@@ -22,6 +31,10 @@ function toMatchedIn(value: unknown): string[] {
 
 function asObject(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function asString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function unwrapRecheckPayload(payload: unknown): Record<string, unknown> {
@@ -46,10 +59,21 @@ function unwrapRecheckPayload(payload: unknown): Record<string, unknown> {
 function normalizeRecheckResult(payload: unknown): RecheckResult {
   const result = unwrapRecheckPayload(payload);
   const reason = typeof result.reason === "string" ? result.reason.trim() : "";
+  const matchedIn = toMatchedIn(result.matchedIn);
+  const accountFound = result.accountFound === true || Boolean(result.matchedAccountId) || matchedIn.includes("Account");
+  const prefillAccount = asObject(result.prefillAccount);
   return {
     existsInSalesforce: result.existsInSalesforce === true,
-    matchedIn: toMatchedIn(result.matchedIn),
+    matchedIn,
     reason: reason || "Salesforce re-check afgerond zonder extra toelichting.",
+    accountFound,
+    salesforceMode: accountFound ? "create_contact_under_existing_account" : "create_account_then_contact",
+    matchedAccountId: asString(result.matchedAccountId),
+    matchedAccountName: asString(result.matchedAccountName),
+    matchedAccountWebsite: asString(result.matchedAccountWebsite),
+    accountName: asString(prefillAccount.name || result.matchedAccountName),
+    accountNumber: asString(prefillAccount.accountNumber),
+    accountDescription: asString(prefillAccount.description || result.reason),
     checkedAt: typeof result.checkedAt === "string" ? result.checkedAt : undefined,
     source: typeof result.source === "string" ? result.source : undefined,
     rawAgentOutput: result.rawAgentOutput,
@@ -102,6 +126,13 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       existsInSalesforce: result.existsInSalesforce,
       matchedIn: result.matchedIn,
       reason: result.reason,
+      salesforceMode: result.salesforceMode,
+      matchedAccountId: result.matchedAccountId,
+      matchedAccountName: result.matchedAccountName,
+      matchedAccountWebsite: result.matchedAccountWebsite,
+      accountName: result.accountName,
+      accountNumber: result.accountNumber,
+      accountDescription: result.accountDescription,
       rawPayload: {
         ...lead.raw_payload,
         salesforce_recheck: {
