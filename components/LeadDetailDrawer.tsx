@@ -104,7 +104,6 @@ export function LeadDetailDrawer({
   const hasEmailBody = Boolean(draft.email_body?.trim());
   const usesExistingAccount = draft.salesforce_mode === "create_contact_under_existing_account";
   const canGoToContact = usesExistingAccount || step === "contact";
-  const accountTitle = usesExistingAccount ? "Gevonden Account" : "Nieuw Account";
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end bg-black/35">
@@ -168,29 +167,30 @@ export function LeadDetailDrawer({
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-4">
-              <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-1 text-sm">
-                <button
-                  type="button"
-                  disabled={usesExistingAccount}
-                  onClick={() => setStep("account")}
-                  className={`rounded-lg px-3 py-2 font-medium ${
-                    step === "account"
-                      ? "bg-white text-zinc-900 shadow-sm"
-                      : "text-zinc-500 hover:text-zinc-900 disabled:cursor-not-allowed disabled:text-zinc-400"
-                  }`}
-                >
-                  Account
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStep("contact")}
-                  className={`rounded-lg px-3 py-2 font-medium ${
-                    step === "contact" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-900"
-                  }`}
-                >
-                  Contact
-                </button>
-              </div>
+              {!usesExistingAccount && (
+                <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-1 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setStep("account")}
+                    className={`rounded-lg px-3 py-2 font-medium ${
+                      step === "account"
+                        ? "bg-white text-zinc-900 shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-900"
+                    }`}
+                  >
+                    Account
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep("contact")}
+                    className={`rounded-lg px-3 py-2 font-medium ${
+                      step === "contact" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-900"
+                    }`}
+                  >
+                    Contact
+                  </button>
+                </div>
+              )}
 
               {step === "account" && !usesExistingAccount ? (
                 <div className="grid grid-cols-1 gap-4">
@@ -230,16 +230,6 @@ export function LeadDetailDrawer({
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4">
-                  {usesExistingAccount && (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-                      <p className="font-semibold">{accountTitle}</p>
-                      <p className="mt-1">
-                        {draft.matched_account_name || draft.account_name || draft.org_name || "Account gevonden"}
-                      </p>
-                      {draft.matched_account_id && <p className="text-xs">Salesforce ID: {draft.matched_account_id}</p>}
-                      {draft.matched_account_website && <p className="text-xs">Website: {draft.matched_account_website}</p>}
-                    </div>
-                  )}
                   <label className="space-y-1">
                     <span className="text-xs font-medium text-zinc-600">Naam</span>
                     <input
@@ -309,6 +299,12 @@ export function LeadDetailDrawer({
                 <p>Industrie: {draft.industry || "diverse"}</p>
                 <p>Hoofdonderwerp: {draft.primary_topic || "-"}</p>
                 <p>Salesforce actie: {accountModeLabel(draft.salesforce_mode)}</p>
+                {usesExistingAccount && (
+                  <p>
+                    Contact wordt gekoppeld aan:{" "}
+                    {draft.matched_account_name || draft.account_name || draft.org_name || "gevonden Account"}
+                  </p>
+                )}
                 <p>Match gevonden in: {draft.matched_in.join(", ") || "Geen overeenkomst"}</p>
                 <p>Reden not-found: {draft.match_reason || "Niet gevonden in Salesforce"}</p>
               </div>
