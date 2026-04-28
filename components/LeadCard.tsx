@@ -73,6 +73,12 @@ export function LeadCard({
         <p>
           <span className="font-medium">Domein:</span> {lead.sender_domain || "-"}
         </p>
+        {lead.salesforce_mode === "create_contact_under_existing_account" && (
+          <p>
+            <span className="font-medium">Account:</span>{" "}
+            {lead.account_name || lead.matched_account_name || "gevonden Account"}
+          </p>
+        )}
       </div>
 
       {!hideActions && (

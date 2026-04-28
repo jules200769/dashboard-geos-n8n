@@ -255,7 +255,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first().json;\nlet parsed = {};\ntry {\n  parsed = JSON.parse(item.output);\n} catch (e) {\n  parsed = { existsInSalesforce: false, matchedIn: [], reason: 'Failed to parse agent output: ' + String(item.output) };\n}\n\nconst matchedIn = Array.isArray(parsed.matchedIn) ? parsed.matchedIn : [];\nconst accountFound = Boolean(parsed.accountFound || parsed.matchedAccountId || matchedIn.includes('Account'));\nparsed.accountFound = accountFound;\nparsed.salesforce_mode = accountFound ? 'create_contact_under_existing_account' : 'create_account_then_contact';\n\nlet crmData = {};\ntry {\n  crmData = $('Prepare CRM Data').first().json;\n} catch (e) {\n  // Fallback als node niet beschikbaar is\n}\n\nreturn [{ json: { ...crmData, ...parsed } }];"
+        "jsCode": "const item = $input.first().json;\nlet parsed = {};\ntry {\n  parsed = typeof item.output === \u0027string\u0027 ? JSON.parse(item.output) : (item.output ?? {});\n} catch (e) {\n  parsed = { existsInSalesforce: false, matchedIn: [], reason: \u0027Failed to parse agent output: \u0027 + String(item.output) };\n}\n\n// Haal originele CRM-data op uit Prepare CRM Data\nlet crmData = {};\ntry {\n  crmData = $(\u0027Prepare CRM Data\u0027).first().json;\n} catch (e) {\n  // Fallback als node niet beschikbaar is\n}\n\nconst matchedIn = Array.isArray(parsed.matchedIn) ? parsed.matchedIn : [];\nconst prefillAccount = parsed.prefillAccount \u0026\u0026 typeof parsed.prefillAccount === \u0027object\u0027 ? parsed.prefillAccount : {};\nconst matchedAccountId = String(parsed.matchedAccountId ?? parsed.matched_account_id ?? prefillAccount.id ?? \u0027\u0027).trim();\nconst matchedAccountName = String(parsed.matchedAccountName ?? parsed.matched_account_name ?? prefillAccount.name ?? \u0027\u0027).trim();\nconst matchedAccountWebsite = String(parsed.matchedAccountWebsite ?? parsed.matched_account_website ?? prefillAccount.website ?? \u0027\u0027).trim();\nconst accountFound = Boolean(parsed.accountFound) || Boolean(matchedAccountId) || matchedIn.includes(\u0027Account\u0027);\nconst salesforceMode = accountFound ? \u0027create_contact_under_existing_account\u0027 : \u0027create_account_then_contact\u0027;\n\nconst normalizedAccount = {\n  accountFound,\n  salesforce_mode: salesforceMode,\n  matchedAccountId,\n  matchedAccountName,\n  matchedAccountWebsite,\n  prefillAccount: {\n    ...prefillAccount,\n    id: matchedAccountId || prefillAccount.id || \u0027\u0027,\n    name: matchedAccountName || prefillAccount.name || \u0027\u0027,\n    website: matchedAccountWebsite || prefillAccount.website || \u0027\u0027,\n  },\n};\n\n// Merge: CRM-velden eerst, daarna SF check resultaten (zodat SF resultaten nooit overschreven worden)\nreturn [{ json: { ...crmData, ...parsed, ...normalizedAccount } }];"
       },
       "id": "fa1fa948-2815-49a4-a5ee-fcbb43fd8ece",
       "name": "Parse Agent Output",
@@ -315,7 +315,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first().json ?? {};\n\nconst firstName = String(item.firstName ?? '').trim();\nconst lastName = String(item.lastName ?? '').trim();\nconst contactName = [firstName, lastName].filter(Boolean).join(' ').trim();\n\nconst email = String(item.email ?? '').trim();\nconst senderEmail = contactName && email ? `${contactName} <${email}>` : email;\n\nconst subject = String(item.lastEmailSubject ?? item.subject ?? '').trim();\nconst urgencyScoreRaw = item.urgencyScore ?? item.urgency_score ?? 0;\nconst urgencyScore = Number(urgencyScoreRaw);\n\nconst budgetMentionedRaw = item.budgetMentioned ?? item.budget_mentioned ?? false;\nconst budgetMentioned =\n  typeof budgetMentionedRaw === 'string'\n    ? budgetMentionedRaw.toLowerCase() === 'true'\n    : Boolean(budgetMentionedRaw);\n\nconst matchedIn = Array.isArray(item.matchedIn) ? item.matchedIn : [];\nconst accountFound = Boolean(item.accountFound || item.matchedAccountId || matchedIn.includes('Account'));\nconst salesforceMode = accountFound ? 'create_contact_under_existing_account' : 'create_account_then_contact';\nconst accountName = String(item.matchedAccountName ?? item.company ?? item.org_name ?? '').trim();\nconst accountDescription = String(item.accountDescription ?? item.suggestedAction ?? item.suggested_action ?? item.reason ?? '').trim();\n\n// The dashboard uses message_id or id to set source_message_id for dedup/upsert.\nconst messageId = String(item.message_id ?? item.id ?? (email ? `${email}|${subject}` : `unknown|${subject}`));\n\nreturn [\n  {\n    json: {\n      message_id: messageId,\n      contact_name: contactName,\n      org_name: String(item.company ?? item.org_name ?? accountName).trim(),\n      sender_email: senderEmail,\n      sender_domain: String(item.emailDomain ?? item.sender_domain ?? '').trim(),\n      subject: subject,\n      sentiment: String(item.sentiment ?? 'Unknown'),\n      confidence: String(item.sentimentConfidence ?? item.confidence ?? 'N/A'),\n      primary_topic: String(item.primaryTopic ?? item.primary_topic ?? '').trim(),\n      secondary_topics: String(item.secondaryTopics ?? item.secondary_topics ?? '').trim(),\n      intent: String(item.leadIntent ?? item.intent ?? '').trim(),\n      urgency_score: Number.isFinite(urgencyScore) ? Math.max(0, Math.min(10, urgencyScore)) : 0,\n      budget_mentioned: budgetMentioned,\n      event_referenced: String(item.eventReferenced ?? item.event_referenced ?? '').trim(),\n      suggested_action: String(item.suggestedAction ?? item.suggested_action ?? '').trim(),\n      existsInSalesforce: Boolean(item.existsInSalesforce),\n      matchedIn,\n      reason: String(item.reason ?? '').trim(),\n      accountFound,\n      salesforce_mode: salesforceMode,\n      matchedAccountId: String(item.matchedAccountId ?? '').trim(),\n      matchedAccountName: String(item.matchedAccountName ?? '').trim(),\n      matchedAccountWebsite: String(item.matchedAccountWebsite ?? '').trim(),\n      prefillAccount: {\n        name: accountName,\n        accountNumber: String(item.accountNumber ?? '').trim(),\n        description: accountDescription,\n      },\n      prefillContact: {\n        firstName,\n        lastName,\n        email,\n        phone: String(item.phone_number ?? '').trim(),\n        description: String(item.suggestedAction ?? item.suggested_action ?? '').trim(),\n      },\n      emailBody: String(item.emailBody ?? ''),\n      phone_number: (() => {\n        const raw = String(item.phone_number ?? '').trim();\n        return raw.replace(/^(?:\\+\\d{1,3}|00\\d{1,3})[\\s\\-.]?/, '').replace(/[\\s\\-.]/g, '');\n      })(),\n      phone_country_code: (() => {\n        const raw = String(item.phone_number ?? '').trim();\n        const match = raw.match(/^(\\+\\d{1,3}|00\\d{1,3})/);\n        if (match) return match[1].replace(/^00/, '+');\n        return '';\n      })(),\n      industry: String(item.industry ?? 'diverse').trim(),\n    },\n  },\n];"
+        "jsCode": "const item = $input.first().json ?? {};\n\nconst firstName = String(item.firstName ?? \u0027\u0027).trim();\nconst lastName = String(item.lastName ?? \u0027\u0027).trim();\nconst contactName = [firstName, lastName].filter(Boolean).join(\u0027 \u0027).trim();\n\nconst email = String(item.email ?? \u0027\u0027).trim();\nconst senderEmail = contactName \u0026\u0026 email ? `${contactName} \u003c${email}\u003e` : email;\n\nconst subject = String(item.lastEmailSubject ?? item.subject ?? \u0027\u0027).trim();\nconst urgencyScoreRaw = item.urgencyScore ?? item.urgency_score ?? 0;\nconst urgencyScore = Number(urgencyScoreRaw);\n\nconst budgetMentionedRaw = item.budgetMentioned ?? item.budget_mentioned ?? false;\nconst budgetMentioned =\n  typeof budgetMentionedRaw === \u0027string\u0027\n    ? budgetMentionedRaw.toLowerCase() === \u0027true\u0027\n    : Boolean(budgetMentionedRaw);\n\nconst matchedIn = Array.isArray(item.matchedIn) ? item.matchedIn : [];\nconst prefillAccount = item.prefillAccount \u0026\u0026 typeof item.prefillAccount === \u0027object\u0027 ? item.prefillAccount : {};\nconst matchedAccountId = String(item.matchedAccountId ?? item.matched_account_id ?? prefillAccount.id ?? \u0027\u0027).trim();\nconst matchedAccountName = String(item.matchedAccountName ?? item.matched_account_name ?? prefillAccount.name ?? \u0027\u0027).trim();\nconst matchedAccountWebsite = String(item.matchedAccountWebsite ?? item.matched_account_website ?? prefillAccount.website ?? \u0027\u0027).trim();\nconst accountFound = Boolean(item.accountFound) || Boolean(matchedAccountId) || matchedIn.includes(\u0027Account\u0027);\nconst accountName = String(item.account_name ?? matchedAccountName ?? prefillAccount.name ?? item.company ?? item.org_name ?? \u0027\u0027).trim();\n\n// The dashboard uses message_id or id to set source_message_id for dedup/upsert.\nconst messageId = String(item.message_id ?? item.id ?? (email ? `${email}|${subject}` : `unknown|${subject}`));\n\nreturn [\n  {\n    json: {\n      message_id: messageId,\n      contact_name: contactName,\n      org_name: String(item.company ?? item.org_name ?? \u0027\u0027).trim(),\n      sender_email: senderEmail,\n      sender_domain: String(item.emailDomain ?? item.sender_domain ?? \u0027\u0027).trim(),\n      subject: subject,\n      sentiment: String(item.sentiment ?? \u0027Unknown\u0027),\n      confidence: String(item.sentimentConfidence ?? item.confidence ?? \u0027N/A\u0027),\n      primary_topic: String(item.primaryTopic ?? item.primary_topic ?? \u0027\u0027).trim(),\n      secondary_topics: String(item.secondaryTopics ?? item.secondary_topics ?? \u0027\u0027).trim(),\n      intent: String(item.leadIntent ?? item.intent ?? \u0027\u0027).trim(),\n      urgency_score: Number.isFinite(urgencyScore) ? Math.max(0, Math.min(10, urgencyScore)) : 0,\n      budget_mentioned: budgetMentioned,\n      event_referenced: String(item.eventReferenced ?? item.event_referenced ?? \u0027\u0027).trim(),\n      suggested_action: String(item.suggestedAction ?? item.suggested_action ?? \u0027\u0027).trim(),\n      existsInSalesforce: Boolean(item.existsInSalesforce),\n      matchedIn,\n      reason: String(item.reason ?? \u0027\u0027).trim(),\n      accountFound,\n      salesforce_mode: accountFound ? \u0027create_contact_under_existing_account\u0027 : \u0027create_account_then_contact\u0027,\n      matchedAccountId,\n      matchedAccountName,\n      matchedAccountWebsite,\n      account_name: accountName,\n      prefillAccount: {\n        ...prefillAccount,\n        id: matchedAccountId || prefillAccount.id || \u0027\u0027,\n        name: accountName || matchedAccountName || prefillAccount.name || \u0027\u0027,\n        website: matchedAccountWebsite || prefillAccount.website || \u0027\u0027,\n      },\n      emailBody: String(item.emailBody ?? \u0027\u0027),\n      phone_number: (() =\u003e {\n        const raw = String(item.phone_number ?? \u0027\u0027).trim();\n        // Strip leading country code (+XX or 00XX) to get the local number\n        return raw.replace(/^(?:\\+\\d{1,3}|00\\d{1,3})[\\s\\-.]?/, \u0027\u0027).replace(/[\\s\\-.]/g, \u0027\u0027);\n      })(),\n      phone_country_code: (() =\u003e {\n        const raw = String(item.phone_number ?? \u0027\u0027).trim();\n        const match = raw.match(/^(\\+\\d{1,3}|00\\d{1,3})/);\n        if (match) return match[1].replace(/^00/, \u0027+\u0027);\n        return \u0027\u0027;\n      })(),\n      industry: String(item.industry ?? \u0027diverse\u0027).trim(),\n    },\n  },\n];"
       },
       "id": "04de90c2-2fc7-4faf-a5b5-e41edc44e3cc",
       "name": "Prepare Dashboard Not-Found Payload1",
@@ -376,7 +376,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json ?? {};\nconst body = input.body && typeof input.body === 'object' ? input.body : input;\n\nconst contactName = String(body.contact_name ?? '').trim();\nconst nameParts = contactName.split(/\\s+/).filter(Boolean);\nconst firstName = String(body.first_name ?? body.firstName ?? (nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : nameParts[0] ?? '')).trim();\nconst lastName = String(body.last_name ?? body.lastName ?? (nameParts.length > 1 ? nameParts[nameParts.length - 1] : 'Unknown')).trim() || 'Unknown';\nconst mode = body.salesforce_mode === 'create_contact_under_existing_account'\n  ? 'create_contact_under_existing_account'\n  : 'create_account_then_contact';\nconst accountName = String(body.account_name ?? body.account?.name ?? body.org_name ?? '').trim();\nconst matchedAccountId = String(body.matched_account_id ?? body.account?.id ?? '').trim();\nconst phone = [body.phone_country_code, body.phone_number].filter(Boolean).join(' ').trim();\n\nreturn [{\n  json: {\n    ...body,\n    firstName,\n    lastName,\n    salesforce_mode: mode,\n    createAccount: mode === 'create_account_then_contact',\n    createContact: true,\n    account: {\n      id: matchedAccountId,\n      name: accountName,\n      number: String(body.account_number ?? body.account?.number ?? '').trim(),\n      description: String(body.account_description ?? body.account?.description ?? body.suggested_action ?? '').trim(),\n      website: String(body.matched_account_website ?? body.account?.website ?? (body.sender_domain ? 'https://' + body.sender_domain : '')).trim(),\n    },\n    contact: {\n      firstName,\n      lastName,\n      email: String(body.sender_email ?? body.contact?.email ?? '').trim(),\n      phone,\n      description: String(body.suggested_action ?? body.contact?.description ?? '').trim(),\n    },\n    save_source: 'dashboard',\n    save_received_at: new Date().toISOString(),\n  }\n}];"
+        "jsCode": "const input = $input.first().json;\n\n// Normalize incoming save payload from dashboard so downstream CRM nodes can use stable fields.\nreturn [{\n  json: {\n    ...input,\n    save_source: 'dashboard',\n    save_received_at: new Date().toISOString(),\n  }\n}];"
       },
       "id": "3f525c0d-6c39-4a5c-9b6c-6a23d09cce85",
       "name": "Prepare Saved Lead Payload1",
@@ -394,7 +394,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2496,
+        1600,
         1744
       ]
     },
@@ -600,7 +600,7 @@
         "promptType": "define",
         "text": "={{ 'Check if this CRM record already exists in Salesforce:\\nEmail: ' + $json.email + '\\nCompany: ' + $json.company + '\\nName: ' + $json.firstName + ' ' + $json.lastName + '\\nEmail domain: ' + $json.emailDomain }}",
         "options": {
-          "systemMessage": "You are a Salesforce duplicate checker for an event management company.\n\nYou receive CRM data extracted from an incoming email. Your task is to determine:\n1. Whether this PERSON already exists in Salesforce as a Contact or Lead.\n2. Whether this ORGANIZATION already exists in Salesforce as an Account.\n\nSalesforce schema — use ONLY these standard field names in your SOQL queries:\n- Lead: Id, Email, FirstName, LastName, Company, Status, Rating\n- Contact: Id, Email, FirstName, LastName, AccountId, Phone\n- Account: Id, Name, Website\n  (Account has NO Domain__c field. Use Website LIKE '%domain%' for domain matching.)\n\nCRITICAL: Each tool expects a COMPLETE SOQL query string starting with SELECT.\nNever pass just a WHERE clause. Always use the format: SELECT [fields] FROM [Object] WHERE [condition] LIMIT 5\n\nSTAP 1 — Zoek de PERSOON\nGebruik twee tools met verschillende zoekmethoden:\n1a. Get Contact Summary — zoek op naam (NOOIT op email): SELECT Id, Email, FirstName, LastName, AccountId FROM Contact WHERE FirstName = 'John' AND LastName = 'Doe' LIMIT 5\n1b. Get Lead Summary — zoek op email: SELECT Id, Email, FirstName, LastName, Company FROM Lead WHERE Email = 'x@example.com' LIMIT 5\nAls Contact of Lead gevonden: persoon gevonden. Ga naar Stap 3.\n\nSTAP 2 — Zoek de ORGANISATIE (altijd uitvoeren)                                                    2b. Per ...: SELECT Id, Name, Website FROM Account WHERE Name LIKE '%...%' LIMIT 5\n2c. Zoek ook op emaildomein: SELECT Id, Name, Website FROM Account WHERE Website LIKE '%emaildomain%' LIMIT 5\nAls EEN van de Account-queries resultaten teruggeeft, is er een organisatie-match gevonden.\n\nSTAP 3 — Als Account gevonden maar Persoon NOG NIET gevonden\nNOOIT concluderen dat de persoon in Salesforce staat alleen omdat het Account/bedrijf bestaat.\nVerplichte vervolgstap:\n3a. Haal het AccountId op uit het gevonden Account-record.\n3b. Zoek de persoon binnen dat Account op naam via Get Contact Summary:\n    SELECT Id, Email, FirstName, LastName FROM Contact WHERE AccountId = '[AccountId]' AND (FirstName = 'John' OR LastName = 'Doe') LIMIT 5\nAlleen als deze Contact-query de persoon teruggeeft: persoon gevonden.\nAnders: persoon is NIEUW, ook al is het bedrijf bekend.\n\nUITVOER\nNa alle stappen, antwoord met ALLEEN dit JSON (geen uitleg, geen markdown):\n{\"existsInSalesforce\": true, \"matchedIn\": [\"Contact\"], \"accountFound\": false, \"matchedAccountId\": \"\", \"matchedAccountName\": \"\", \"matchedAccountWebsite\": \"\", \"reason\": \"Found contact John Doe via name match.\"}\n\nRegels:\n- existsInSalesforce is true ALLEEN als de PERSOON gevonden is (Contact of Lead match)\n- existsInSalesforce is false als geen persoonsovereenkomst bestaat, ook als Account gevonden werd\n- matchedIn bevat: \"Contact\", \"Lead\", en/of \"Account\" — alleen wat daadwerkelijk gevonden is\n- reason vermeldt expliciet: wat matchte (naam/email/token), in welk object, en of bedrijf gevonden maar persoon nieuw is\n- Voorbeeldreden bij bedrijf gevonden maar persoon nieuw: \"Account 'Novada Cement Belgium' gevonden via token 'novada', maar geen Contact of Lead gevonden voor Pieter Janssen. Persoon is nieuw.\"",
+          "systemMessage": "You are a Salesforce duplicate checker for an event management company.\n\nYou receive CRM data extracted from an incoming email. Your task is to determine:\n1. Whether this PERSON already exists in Salesforce as a Contact or Lead.\n2. Whether this ORGANIZATION already exists in Salesforce as an Account.\n\nSalesforce schema — use ONLY these standard field names in your SOQL queries:\n- Lead: Id, Email, FirstName, LastName, Company, Status, Rating\n- Contact: Id, Email, FirstName, LastName, AccountId, Phone\n- Account: Id, Name, Website\n  (Account has NO Domain__c field. Use Website LIKE '%domain%' for domain matching.)\n\nCRITICAL: Each tool expects a COMPLETE SOQL query string starting with SELECT.\nNever pass just a WHERE clause. Always use the format: SELECT [fields] FROM [Object] WHERE [condition] LIMIT 5\n\nSTAP 1 — Zoek de PERSOON\nGebruik twee tools met verschillende zoekmethoden:\n1a. Get Contact Summary — zoek op naam (NOOIT op email): SELECT Id, Email, FirstName, LastName, AccountId FROM Contact WHERE FirstName = 'John' AND LastName = 'Doe' LIMIT 5\n1b. Get Lead Summary — zoek op email: SELECT Id, Email, FirstName, LastName, Company FROM Lead WHERE Email = 'x@example.com' LIMIT 5\nAls Contact of Lead gevonden: persoon gevonden. Ga naar Stap 3.\n\nSTAP 2 — Zoek de ORGANISATIE (altijd uitvoeren)                                                    2b. Per ...: SELECT Id, Name, Website FROM Account WHERE Name LIKE '%...%' LIMIT 5\n2c. Zoek ook op emaildomein: SELECT Id, Name, Website FROM Account WHERE Website LIKE '%emaildomain%' LIMIT 5\nAls EEN van de Account-queries resultaten teruggeeft, is er een organisatie-match gevonden.\n\nSTAP 3 — Als Account gevonden maar Persoon NOG NIET gevonden\nNOOIT concluderen dat de persoon in Salesforce staat alleen omdat het Account/bedrijf bestaat.\nVerplichte vervolgstap:\n3a. Haal het AccountId op uit het gevonden Account-record.\n3b. Zoek de persoon binnen dat Account op naam via Get Contact Summary:\n    SELECT Id, Email, FirstName, LastName FROM Contact WHERE AccountId = '[AccountId]' AND (FirstName = 'John' OR LastName = 'Doe') LIMIT 5\nAlleen als deze Contact-query de persoon teruggeeft: persoon gevonden.\nAnders: persoon is NIEUW, ook al is het bedrijf bekend.\n\nUITVOER\nNa alle stappen, antwoord met ALLEEN dit JSON (geen uitleg, geen markdown):\n{\"existsInSalesforce\": true, \"matchedIn\": [\"Contact\"], \"reason\": \"Found contact John Doe via name match.\"}\n\nRegels:\n- existsInSalesforce is true ALLEEN als de PERSOON gevonden is (Contact of Lead match)\n- existsInSalesforce is false als geen persoonsovereenkomst bestaat, ook als Account gevonden werd\n- matchedIn bevat: \"Contact\", \"Lead\", en/of \"Account\" — alleen wat daadwerkelijk gevonden is\n- reason vermeldt expliciet: wat matchte (naam/email/token), in welk object, en of bedrijf gevonden maar persoon nieuw is\n- Voorbeeldreden bij bedrijf gevonden maar persoon nieuw: \"Account 'Novada Cement Belgium' gevonden via token 'novada', maar geen Contact of Lead gevonden voor Pieter Janssen. Persoon is nieuw.\"",
           "maxIterations": 7
         }
       },
@@ -710,7 +710,7 @@
             },
             {
               "name": "org_name",
-              "description": "=The sender's organization/company name.  Extract from signature, email domain, or body. Empty string if unknown. ATTENTION: the org_name could be a compressed version of the trade name. Place a space in org_name; do this ONLY if it is separable with official words. (EXAMPLE: ''Novadacement'' becomes ''Novada cement''. (PROHIBITED: ''Nova dacement'' because no official word has been specified). Do this only if you think org_name} is compressed. (when you think org_name is not compressed, use that.).)"
+              "description": "=The sender's organization/company name.  Extract from signature, email domain, or body. Empty string if unknown. ATTENTION: the org_name could be a compressed version of the trade name. Place a space in org_name; do this ONLY if it is separable with official words. (EXAMPLE: ''Novadacement'' becomes ''Novada cement''. (PROHIBITED: ''Nova dacement'' because no official word has been specified). Do this only if you think org_name} is compressed. (when you think org_name is not compressed, use that.).) (YOU CAN NOT NAME ORG_NAME ANYTHING LIKE GEOS OR GEOS LABORATORYS BECAUSE THE INTERNAL COMPANY IS NAMED ''Geos'' AND THIS PROJECT IS ABOUT EXTERNAL LEADS'')"
             },
             {
               "name": "contact_name",
@@ -835,6 +835,25 @@
                 "type": "string",
                 "operation": "contains"
               }
+            },
+            {
+              "id": "18c9d30c-ae05-45d4-a315-0cf6bcf3edb4",
+              "leftValue": "={{ $json.From }}",
+              "rightValue": "@geos-laboratories.com",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "9f88abcb-35df-4989-a30e-8d13a9b883f5",
+              "leftValue": "={{ $json.From }}",
+              "rightValue": "sales@geos-laboratories.com",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
             }
           ],
           "combinator": "and"
@@ -852,56 +871,21 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "needs-new-account",
-              "leftValue": "={{ $json.createAccount }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "a68aa2e0-7f1f-4a02-b611-9cb57802fc01",
-      "name": "Needs New Account?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1600,
-        1744
-      ]
-    },
-    {
-      "parameters": {
         "resource": "account",
-        "operation": "create",
-        "name": "={{ $json.account.name }}",
+        "name": "pipo",
         "additionalFields": {
-          "accountNumber": "={{ $json.account.number }}",
-          "description": "={{ $json.account.description }}",
-          "website": "={{ $json.account.website }}"
+          "industry": "",
+          "website": ""
         }
       },
-      "id": "dd5cbb51-55f4-42d4-a88b-1242018c2f34",
-      "name": "Create Salesforce Account",
       "type": "n8n-nodes-base.salesforce",
       "typeVersion": 1,
       "position": [
-        1824,
-        1664
+        -256,
+        976
       ],
+      "id": "26d24552-5e4b-43b6-91d8-6eda1d32489b",
+      "name": "Create an account",
       "credentials": {
         "salesforceOAuth2Api": {
           "id": "2d8FqMjpBnJ1R6x0",
@@ -910,56 +894,34 @@
       }
     },
     {
-      "parameters": {
-        "jsCode": "const savedLead = $('Prepare Saved Lead Payload1').first().json;\nconst createdAccount = $input.first().json ?? {};\nreturn [{\n  json: {\n    ...savedLead,\n    account: {\n      ...savedLead.account,\n      id: createdAccount.id || savedLead.account.id,\n      created: true,\n      createResponse: createdAccount,\n    },\n  }\n}];"
-      },
-      "id": "ef8055a2-5dcf-426d-971e-10cc81c8cb1a",
-      "name": "Use Created Account For Contact",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2048,
-        1664
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const savedLead = $input.first().json ?? {};\nreturn [{\n  json: {\n    ...savedLead,\n    account: {\n      ...savedLead.account,\n      id: savedLead.account.id || savedLead.matched_account_id,\n      created: false,\n    },\n  }\n}];"
-      },
-      "id": "faea9b79-e8d4-43e6-9216-bb8440fef442",
-      "name": "Use Existing Account For Contact",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1824,
-        1840
-      ]
-    },
-    {
-      "parameters": {
-        "resource": "contact",
-        "operation": "create",
-        "lastname": "={{ $json.contact.lastName }}",
-        "additionalFields": {
-          "acconuntId": "={{ $json.account.id }}",
-          "firstName": "={{ $json.contact.firstName }}",
-          "email": "={{ $json.contact.email }}",
-          "phone": "={{ $json.contact.phone }}",
-          "description": "={{ $json.contact.description }}"
-        }
-      },
-      "id": "ed0d5d05-4149-4ebf-bc5c-b09ec0dd5df7",
-      "name": "Create Salesforce Contact",
-      "type": "n8n-nodes-base.salesforce",
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        2272,
-        1744
+        -3088,
+        1360
       ],
+      "id": "178fbc9f-2016-4711-8a9a-dbf9db27e015",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "19c9b7ff9001402f"
+      },
+      "id": "8d01cf7d-8f30-4eb0-bedd-0c9b9d532d3c",
+      "name": "haal-op",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        -2912,
+        1360
+      ],
+      "typeVersion": 2.1,
+      "webhookId": "26c58ac3-b6b6-4f1b-bd96-32d8e41c7a54",
       "credentials": {
-        "salesforceOAuth2Api": {
-          "id": "2d8FqMjpBnJ1R6x0",
-          "name": "Salesforce account 2"
+        "gmailOAuth2": {
+          "id": "qQkDLSpHVGotV648",
+          "name": "Gmail account 4"
         }
       }
     }
@@ -1083,7 +1045,7 @@
       "main": [
         [
           {
-            "node": "Needs New Account?",
+            "node": "Saved Lead Received1",
             "type": "main",
             "index": 0
           }
@@ -1248,66 +1210,20 @@
         ]
       ]
     },
-    "Needs New Account?": {
+    "When clicking ‘Execute workflow’": {
       "main": [
         [
           {
-            "node": "Create Salesforce Account",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Use Existing Account For Contact",
+            "node": "haal-op",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Create Salesforce Account": {
+    "haal-op": {
       "main": [
-        [
-          {
-            "node": "Use Created Account For Contact",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Use Created Account For Contact": {
-      "main": [
-        [
-          {
-            "node": "Create Salesforce Contact",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Use Existing Account For Contact": {
-      "main": [
-        [
-          {
-            "node": "Create Salesforce Contact",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create Salesforce Contact": {
-      "main": [
-        [
-          {
-            "node": "Saved Lead Received1",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     }
   },

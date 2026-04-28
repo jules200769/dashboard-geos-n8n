@@ -236,6 +236,16 @@ export function LeadDetailDrawer({
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4">
+                  {usesExistingAccount && (
+                    <label className="space-y-1">
+                      <span className="text-xs font-medium text-zinc-600">Account name</span>
+                      <input
+                        value={draft.account_name || draft.matched_account_name || draft.org_name}
+                        onChange={(event) => update("account_name", event.target.value)}
+                        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400"
+                      />
+                    </label>
+                  )}
                   <label className="space-y-1">
                     <span className="text-xs font-medium text-zinc-600">Naam</span>
                     <input
@@ -308,7 +318,8 @@ export function LeadDetailDrawer({
                 {usesExistingAccount && (
                   <p>
                     Contact wordt gekoppeld aan:{" "}
-                    {draft.matched_account_name || draft.account_name || draft.org_name || "gevonden Account"}
+                    {draft.account_name || draft.matched_account_name || draft.org_name || "gevonden Account"}
+                    {draft.matched_account_id ? ` (${draft.matched_account_id})` : ""}
                   </p>
                 )}
                 <p>Match gevonden in: {draft.matched_in.join(", ") || "Geen overeenkomst"}</p>

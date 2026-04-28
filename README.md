@@ -54,6 +54,23 @@ Gebruik deze minimale body (veldnamen matchen je flow):
 }
 ```
 
+Wanneer de persoon niet is gevonden maar het bedrijf wel als Salesforce Account bestaat, stuurt n8n aanvullend:
+
+```json
+{
+  "existsInSalesforce": false,
+  "matchedIn": ["Account"],
+  "accountFound": true,
+  "salesforce_mode": "create_contact_under_existing_account",
+  "matchedAccountId": "001...",
+  "matchedAccountName": "Acme Events",
+  "matchedAccountWebsite": "https://acme.com",
+  "account_name": "Acme Events"
+}
+```
+
+Het dashboard toont `account_name` als `Account name`; bij opslaan gebruikt de backend `matchedAccountId` als AccountId in de doorgestuurde save payload.
+
 Optioneel beveiligd met header als je `N8N_WEBHOOK_SECRET` gebruikt:
 
 `x-webhook-secret: <N8N_WEBHOOK_SECRET>`

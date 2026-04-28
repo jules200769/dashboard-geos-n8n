@@ -91,7 +91,14 @@ export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
   const matchedIn = toMatchedIn(payload.matchedIn || payload.matched_in);
   const prefillAccount = asRecord(payload.prefillAccount);
   const salesforceMode = inferSalesforceMode(payload, matchedIn);
-  const accountName = asString(prefillAccount.name || payload.account_name || payload.org_name || payload.company);
+  const accountName = asString(
+    prefillAccount.name ||
+      payload.account_name ||
+      payload.matchedAccountName ||
+      payload.matched_account_name ||
+      payload.org_name ||
+      payload.company,
+  );
 
   return {
     source_message_id: asString(payload.message_id || payload.id) || null,
