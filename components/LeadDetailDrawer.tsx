@@ -106,8 +106,14 @@ export function LeadDetailDrawer({
   const canGoToContact = usesExistingAccount || step === "contact";
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/35">
-      <aside className="flex h-full w-full max-w-5xl flex-col bg-white shadow-2xl">
+    <div
+      className="fixed inset-0 z-40 flex justify-end bg-black/35"
+      onClick={onClose}
+    >
+      <aside
+        className="flex h-full w-full max-w-5xl flex-col bg-white shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 px-6 py-4">
           <div>
