@@ -35,10 +35,42 @@ const emptyMetrics: MetricsResponse = {
   intentSeries: [],
 };
 
-function KpiTile({ title, value }: { title: string; value: string | number }) {
+function KpiTile({
+  title,
+  value,
+  titleLogo,
+}: {
+  title: string;
+  value: string | number;
+  titleLogo?: "salesforce" | "gmail";
+}) {
+  const logo =
+    titleLogo === "salesforce"
+      ? { src: "/salesforce-logo.png" as const, alt: "Salesforce" }
+      : titleLogo === "gmail"
+        ? { src: "/gmail-logo.png" as const, alt: "Gmail" }
+        : null;
+
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <p className="text-base text-zinc-500">{title}</p>
+      <p
+        className={`text-base text-zinc-500 ${logo ? "flex flex-wrap items-center gap-2" : ""}`}
+      >
+        {logo ? (
+          <>
+            <span>{title}</span>
+            <Image
+              src={logo.src}
+              alt={logo.alt}
+              width={80}
+              height={26}
+              className="h-5 w-auto max-w-[6.5rem] object-contain"
+            />
+          </>
+        ) : (
+          title
+        )}
+      </p>
       <p className="mt-2 text-4xl font-semibold text-zinc-900">{value}</p>
     </div>
   );
@@ -175,9 +207,9 @@ export default function Home() {
               />
             </Link>
             <div>
-              <h1 className="text-3xl font-semibold text-zinc-900">leadreview-dashboard</h1>
+              <h1 className="text-3xl font-semibold text-zinc-900">Salesforce-dashboard</h1>
               <p className="text-base text-zinc-600">
-                Wachtrij van leads die niet in Salesforce gevonden zijn.
+                Inbox van leads die niet in Salesforce gevonden zijn.
               </p>
             </div>
           </div>
@@ -227,8 +259,8 @@ export default function Home() {
         )}
 
         <section className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <KpiTile title="Open leads" value={metrics.openLeads} />
-          <KpiTile title="Vandaag opgeslagen" value={metrics.savedToday} />
+          <KpiTile title="Open leads" value={metrics.openLeads} titleLogo="gmail" />
+          <KpiTile title="Vandaag opgeslagen" value={metrics.savedToday} titleLogo="salesforce" />
           <KpiTile title="Geschatte tijdsbesparing (min)" value={metrics.estimatedTimeSavedMinutes} />
         </section>
 
@@ -252,9 +284,18 @@ export default function Home() {
             </div>
           </div>
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm flex flex-col">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-zinc-800">Open beoordelingswachtrij</h2>
-              <p className="text-sm text-zinc-500">{openLeads.length} vermeldingen</p>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="flex flex-wrap items-center gap-2 text-base font-semibold text-zinc-800">
+                <span>Potentiële Salesforce contacten</span>
+                <Image
+                  src="/salesforce-logo.png"
+                  alt="Salesforce"
+                  width={80}
+                  height={26}
+                  className="h-5 w-auto max-w-[6.5rem] object-contain"
+                />
+              </h2>
+              <p className="shrink-0 text-sm text-zinc-500">{openLeads.length} vermeldingen</p>
             </div>
             <div className="h-80 overflow-y-auto pr-2 flex flex-col gap-3">
               {isLoading ? (
