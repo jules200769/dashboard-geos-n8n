@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import type { LeadRecord, SalesforceMode } from "@/lib/types";
 import { INDUSTRY_OPTIONS } from "@/lib/types";
 
-const fieldBase =
-  "w-full rounded-2xl border border-zinc-200/90 bg-white px-3.5 py-2.5 text-sm text-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] placeholder:text-zinc-400 transition-all duration-200 ease-out focus:border-zinc-300 focus:outline-none focus:ring-[3px] focus:ring-sky-500/15";
+const fieldBaseCore =
+  "rounded-2xl border border-zinc-200/90 bg-white px-3.5 py-2.5 text-sm text-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] placeholder:text-zinc-400 transition-all duration-200 ease-out focus:border-zinc-300 focus:outline-none focus:ring-[3px] focus:ring-sky-500/15";
+
+const fieldBase = `w-full ${fieldBaseCore}`;
 
 function IndustrySelect({
   value,
@@ -328,11 +330,11 @@ export function LeadDetailDrawer({
                   </label>
                   <label className="space-y-1.5">
                     <span className="text-xs font-medium text-zinc-500">Telefoonnummer</span>
-                    <div className="flex gap-2">
+                    <div className="flex min-w-0 gap-2">
                       <select
                         value={draft.phone_country_code || "+32"}
                         onChange={(event) => update("phone_country_code", event.target.value)}
-                        className={`shrink-0 ${fieldBase}`}
+                        className={`w-44 shrink-0 ${fieldBaseCore}`}
                       >
                         <option value="+32">+32 (BE)</option>
                         <option value="+31">+31 (NL)</option>
@@ -345,7 +347,7 @@ export function LeadDetailDrawer({
                         value={draft.phone_number || ""}
                         onChange={(event) => update("phone_number", event.target.value)}
                         placeholder="onbekend"
-                        className={fieldBase}
+                        className={`min-w-0 flex-1 ${fieldBaseCore}`}
                       />
                     </div>
                   </label>
