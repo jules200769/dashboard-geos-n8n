@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import type { LeadRecord, SalesforceMode } from "@/lib/types";
 import { INDUSTRY_OPTIONS } from "@/lib/types";
 
-const fieldBaseCore =
-  "rounded-2xl border border-zinc-200/90 bg-white px-3.5 py-2.5 text-sm text-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] placeholder:text-zinc-400 transition-all duration-200 ease-out focus:border-zinc-300 focus:outline-none focus:ring-[3px] focus:ring-sky-500/15";
+const fieldBaseShell =
+  "rounded-2xl border border-zinc-200/90 bg-white py-2.5 text-sm text-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] placeholder:text-zinc-400 transition-all duration-200 ease-out focus:border-zinc-300 focus:outline-none focus:ring-[3px] focus:ring-sky-500/15";
+
+const fieldBaseCore = `px-3.5 ${fieldBaseShell}`;
 
 const fieldBase = `w-full ${fieldBaseCore}`;
 
@@ -334,7 +336,7 @@ export function LeadDetailDrawer({
                       <select
                         value={draft.phone_country_code || "+32"}
                         onChange={(event) => update("phone_country_code", event.target.value)}
-                        className={`w-44 shrink-0 ${fieldBaseCore}`}
+                        className={`w-fit shrink-0 pl-2 pr-7 ${fieldBaseShell}`}
                       >
                         <option value="+32">+32 (BE)</option>
                         <option value="+31">+31 (NL)</option>
