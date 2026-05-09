@@ -32,14 +32,9 @@ function IndustrySelect({
           <span className="text-xs font-medium text-zinc-500">Industrie: </span>
           {value || "diverse"}
         </span>
-        <svg
-          className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform duration-200 ease-out ${open ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <span className={`shrink-0 transition-transform duration-200 ease-out ${open ? "rotate-180" : ""}`}>
+          {chevronIcon}
+        </span>
       </button>
       {open && (
         <div className="max-h-48 overflow-y-auto rounded-2xl border border-zinc-200/80 bg-white/95 py-1 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.18)] ring-1 ring-black/[0.03] backdrop-blur-md animate-[fade-in_0.15s_ease-out]">
@@ -58,6 +53,81 @@ function IndustrySelect({
               {option}
             </button>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const chevronIcon = (
+  <svg className="h-4 w-4 shrink-0 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+  </svg>
+);
+
+function AccountCandidateSelect({
+  candidates,
+  selectedId,
+  onSelect,
+}: {
+  candidates: SalesforceAccountCandidate[];
+  selectedId: string;
+  onSelect: (c: SalesforceAccountCandidate) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = candidates.find((c) => c.id === selectedId) ?? candidates[0];
+
+  return (
+    <div className="space-y-1.5">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full items-start justify-between gap-2 rounded-2xl border border-zinc-200/90 bg-white px-3.5 py-2.5 text-left text-sm shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out hover:bg-zinc-50/80 focus:outline-none focus:ring-[3px] focus:ring-sky-500/25"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="text-xs font-medium text-zinc-500">Salesforce-account: </span>
+          {selected ? (
+            <span className="mt-0.5 flex flex-col gap-0.5">
+              <span className="font-medium text-zinc-900">{selected.name || selected.id}</span>
+              <span className="font-mono text-xs text-zinc-500">{selected.id}</span>
+              {selected.website ? (
+                <span className="text-xs text-zinc-600">{selected.website}</span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="text-zinc-500">Kies een account</span>
+          )}
+        </span>
+        <span className={`mt-0.5 shrink-0 transition-transform duration-200 ease-out ${open ? "rotate-180" : ""}`}>
+          {chevronIcon}
+        </span>
+      </button>
+      {open && (
+        <div className="max-h-56 overflow-y-auto rounded-2xl border border-sky-200/50 bg-white/95 py-1 shadow-[0_12px_40px_-12px_rgba(14,165,233,0.18)] ring-1 ring-sky-500/10 backdrop-blur-md animate-[fade-in_0.15s_ease-out]">
+          {candidates.map((c) => {
+            const isActive = c.id === selectedId;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  onSelect(c);
+                  setOpen(false);
+                }}
+                className={`w-full px-3.5 py-2.5 text-left text-sm transition-colors first:rounded-t-xl last:rounded-b-xl ${
+                  isActive
+                    ? "bg-sky-50 font-medium text-zinc-900 ring-1 ring-inset ring-sky-300/60"
+                    : "text-zinc-700 hover:bg-sky-50/50"
+                }`}
+              >
+                <span className="block">{c.name || c.id}</span>
+                <span className="mt-0.5 block font-mono text-xs text-zinc-500">{c.id}</span>
+                {c.website ? (
+                  <span className="mt-0.5 block text-xs text-zinc-600">{c.website}</span>
+                ) : null}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -310,38 +380,11 @@ export function LeadDetailDrawer({
               ) : (
                 <div className="grid grid-cols-1 gap-4">
                   {usesExistingAccount && accountCandidates.length > 1 && (
-                    <fieldset className="space-y-2 rounded-2xl border border-zinc-200/90 bg-zinc-50/50 p-3.5">
-                      <legend className="px-1 text-xs font-medium text-zinc-500">
-                        Salesforce-account (meerdere treffers)
-                      </legend>
-                      <div className="flex flex-col gap-2">
-                        {accountCandidates.map((c) => (
-                          <label
-                            key={c.id}
-                            className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition-colors ${
-                              draft.matched_account_id === c.id
-                                ? "border-sky-400/80 bg-sky-50/80 text-zinc-900"
-                                : "border-zinc-200/80 bg-white hover:bg-zinc-50/90"
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name="matched-account-candidate"
-                              className="mt-1 shrink-0"
-                              checked={draft.matched_account_id === c.id}
-                              onChange={() => applyAccountCandidate(c)}
-                            />
-                            <span className="min-w-0">
-                              <span className="font-medium text-zinc-900">{c.name || c.id}</span>
-                              <span className="mt-0.5 block font-mono text-xs text-zinc-500">{c.id}</span>
-                              {c.website ? (
-                                <span className="mt-0.5 block text-xs text-zinc-600">{c.website}</span>
-                              ) : null}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </fieldset>
+                    <AccountCandidateSelect
+                      candidates={accountCandidates}
+                      selectedId={draft.matched_account_id}
+                      onSelect={applyAccountCandidate}
+                    />
                   )}
                   {usesExistingAccount && (
                     <label className="space-y-1.5">
