@@ -24,6 +24,13 @@ export const INDUSTRY_OPTIONS = [
 
 export type Industry = (typeof INDUSTRY_OPTIONS)[number];
 
+/** Salesforce Account rows surfaced for dashboard account picker (Id/Name/Website). */
+export interface SalesforceAccountCandidate {
+  id: string;
+  name: string;
+  website: string;
+}
+
 export interface LeadRecord {
   id: string;
   source_message_id: string | null;
@@ -53,6 +60,7 @@ export interface LeadRecord {
   matched_account_id: string;
   matched_account_name: string;
   matched_account_website: string;
+  matched_account_candidates: SalesforceAccountCandidate[];
   account_name: string;
   account_number: string;
   account_description: string;

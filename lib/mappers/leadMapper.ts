@@ -1,4 +1,4 @@
-import type { LeadRecord, Industry, SalesforceMode } from "../types";
+import type { LeadRecord, Industry, SalesforceMode, SalesforceAccountCandidate } from "../types";
 import { INDUSTRY_OPTIONS } from "../types";
 
 type AnyJson = Record<string, unknown>;
@@ -26,6 +26,29 @@ function toMatchedIn(value: unknown): string[] {
   if (Array.isArray(value)) return value.map((item) => asString(item)).filter(Boolean);
   const single = asString(value);
   return single ? [single] : [];
+}
+
+function toAccountCandidates(payload: AnyJson): SalesforceAccountCandidate[] {
+  const raw =
+    payload.matchedAccountCandidates ??
+    payload.matched_account_candidates ??
+    payload.accountCandidates ??
+    payload.account_candidates ??
+    payload.matchedAccounts ??
+    payload.matched_accounts;
+  if (!Array.isArray(raw)) return [];
+  const out: SalesforceAccountCandidate[] = [];
+  for (const item of raw) {
+    const rec = asRecord(item);
+    const id = asString(rec.id ?? rec.Id).trim();
+    if (!id) continue;
+    out.push({
+      id,
+      name: asString(rec.name ?? rec.Name).trim(),
+      website: asString(rec.website ?? rec.Website).trim(),
+    });
+  }
+  return out;
 }
 
 function asRecord(value: unknown): AnyJson {
@@ -83,12 +106,18 @@ export function shouldIngestLead(payload: AnyJson): boolean {
   return existsInSalesforce === false;
 }
 
+/** Normalize account candidate arrays from n8n webhooks (camelCase or snake_case keys). */
+export function accountCandidatesFromPayload(payload: Record<string, unknown>): SalesforceAccountCandidate[] {
+  return toAccountCandidates(payload as AnyJson);
+}
+
 export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
   const senderEmail = normalizeEmail(payload.sender_email);
   const senderDomain = inferDomain(senderEmail, asString(payload.sender_domain));
   const sentiment = asString(payload.sentiment, "Unknown");
   const urgency = Math.max(0, Math.min(10, asNumber(payload.urgency_score, 0)));
   const matchedIn = toMatchedIn(payload.matchedIn || payload.matched_in);
+  const matchedAccountCandidates = toAccountCandidates(payload);
   const prefillAccount = asRecord(payload.prefillAccount);
   const salesforceMode = inferSalesforceMode(payload, matchedIn);
   const accountName = asString(
@@ -128,6 +157,7 @@ export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
     matched_account_id: asString(payload.matchedAccountId || payload.matched_account_id),
     matched_account_name: asString(payload.matchedAccountName || payload.matched_account_name),
     matched_account_website: asString(payload.matchedAccountWebsite || payload.matched_account_website),
+    matched_account_candidates: matchedAccountCandidates,
     account_name: accountName,
     account_number: asString(prefillAccount.accountNumber || prefillAccount.account_number || payload.account_number),
     account_description: asString(

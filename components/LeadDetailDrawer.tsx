@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import type { LeadRecord, SalesforceMode } from "@/lib/types";
+import type { LeadRecord, SalesforceAccountCandidate, SalesforceMode } from "@/lib/types";
 import { INDUSTRY_OPTIONS } from "@/lib/types";
 
 const fieldBaseShell =
@@ -140,6 +140,19 @@ export function LeadDetailDrawer({
     onChange(next);
   };
 
+  const applyAccountCandidate = (candidate: SalesforceAccountCandidate) => {
+    const next: LeadRecord = {
+      ...draft,
+      matched_account_id: candidate.id,
+      matched_account_name: candidate.name,
+      matched_account_website: candidate.website,
+      account_name: candidate.name,
+    };
+    setDraft(next);
+    onChange(next);
+  };
+
+  const accountCandidates = draft.matched_account_candidates ?? [];
   const hasEmailBody = Boolean(draft.email_body?.trim());
   const usesExistingAccount = draft.salesforce_mode === "create_contact_under_existing_account";
   const canGoToContact = usesExistingAccount || step === "contact";
@@ -296,6 +309,40 @@ export function LeadDetailDrawer({
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4">
+                  {usesExistingAccount && accountCandidates.length > 1 && (
+                    <fieldset className="space-y-2 rounded-2xl border border-zinc-200/90 bg-zinc-50/50 p-3.5">
+                      <legend className="px-1 text-xs font-medium text-zinc-500">
+                        Salesforce-account (meerdere treffers)
+                      </legend>
+                      <div className="flex flex-col gap-2">
+                        {accountCandidates.map((c) => (
+                          <label
+                            key={c.id}
+                            className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition-colors ${
+                              draft.matched_account_id === c.id
+                                ? "border-sky-400/80 bg-sky-50/80 text-zinc-900"
+                                : "border-zinc-200/80 bg-white hover:bg-zinc-50/90"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="matched-account-candidate"
+                              className="mt-1 shrink-0"
+                              checked={draft.matched_account_id === c.id}
+                              onChange={() => applyAccountCandidate(c)}
+                            />
+                            <span className="min-w-0">
+                              <span className="font-medium text-zinc-900">{c.name || c.id}</span>
+                              <span className="mt-0.5 block font-mono text-xs text-zinc-500">{c.id}</span>
+                              {c.website ? (
+                                <span className="mt-0.5 block text-xs text-zinc-600">{c.website}</span>
+                              ) : null}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  )}
                   {usesExistingAccount && (
                     <label className="space-y-1.5">
                       <span className="text-xs font-medium text-zinc-500">Account name</span>

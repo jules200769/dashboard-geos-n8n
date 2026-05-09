@@ -38,6 +38,7 @@ function getMockStore(): LeadRecord[] {
       matched_account_id: "",
       matched_account_name: "",
       matched_account_website: "",
+      matched_account_candidates: [],
       account_name: "",
       account_number: "",
       account_description: "",
@@ -176,6 +177,7 @@ export async function upsertLead(lead: Partial<LeadRecord>): Promise<LeadRecord>
         matched_account_id: lead.matched_account_id ?? "",
         matched_account_name: lead.matched_account_name ?? "",
         matched_account_website: lead.matched_account_website ?? "",
+        matched_account_candidates: lead.matched_account_candidates ?? [],
         account_name: lead.account_name ?? lead.org_name ?? "",
         account_number: lead.account_number ?? "",
         account_description: lead.account_description ?? "",
@@ -265,6 +267,7 @@ export async function markLeadRechecked(
     matchedAccountId?: string;
     matchedAccountName?: string;
     matchedAccountWebsite?: string;
+    matchedAccountCandidates?: LeadRecord["matched_account_candidates"];
     accountName?: string;
     accountNumber?: string;
     accountDescription?: string;
@@ -285,6 +288,8 @@ export async function markLeadRechecked(
       matched_account_id: result.matchedAccountId ?? store[idx].matched_account_id,
       matched_account_name: result.matchedAccountName ?? store[idx].matched_account_name,
       matched_account_website: result.matchedAccountWebsite ?? store[idx].matched_account_website,
+      matched_account_candidates:
+        result.matchedAccountCandidates ?? store[idx].matched_account_candidates,
       account_name: result.accountName ?? store[idx].account_name,
       account_number: result.accountNumber ?? store[idx].account_number,
       account_description: result.accountDescription ?? store[idx].account_description,
@@ -306,6 +311,9 @@ export async function markLeadRechecked(
   if (result.matchedAccountId !== undefined) updatePayload.matched_account_id = result.matchedAccountId;
   if (result.matchedAccountName !== undefined) updatePayload.matched_account_name = result.matchedAccountName;
   if (result.matchedAccountWebsite !== undefined) updatePayload.matched_account_website = result.matchedAccountWebsite;
+  if (result.matchedAccountCandidates !== undefined) {
+    updatePayload.matched_account_candidates = result.matchedAccountCandidates;
+  }
   if (result.accountName !== undefined) updatePayload.account_name = result.accountName;
   if (result.accountNumber !== undefined) updatePayload.account_number = result.accountNumber;
   if (result.accountDescription !== undefined) updatePayload.account_description = result.accountDescription;

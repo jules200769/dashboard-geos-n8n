@@ -28,6 +28,7 @@ create table if not exists public.lead_queue (
   matched_account_id text not null default '',
   matched_account_name text not null default '',
   matched_account_website text not null default '',
+  matched_account_candidates jsonb not null default '[]'::jsonb,
   account_name text not null default '',
   account_number text not null default '',
   account_description text not null default '',
@@ -54,6 +55,7 @@ alter table public.lead_queue add column if not exists matched_account_website t
 alter table public.lead_queue add column if not exists account_name text not null default '';
 alter table public.lead_queue add column if not exists account_number text not null default '';
 alter table public.lead_queue add column if not exists account_description text not null default '';
+alter table public.lead_queue add column if not exists matched_account_candidates jsonb not null default '[]'::jsonb;
 
 create or replace function public.set_updated_at()
 returns trigger

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLeadById, markLeadRechecked } from "@/lib/data/leadRepository";
-import type { SalesforceMode } from "@/lib/types";
+import { accountCandidatesFromPayload } from "@/lib/mappers/leadMapper";
+import type { SalesforceAccountCandidate, SalesforceMode } from "@/lib/types";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -15,6 +16,7 @@ interface RecheckResult {
   matchedAccountId: string;
   matchedAccountName: string;
   matchedAccountWebsite: string;
+  matchedAccountCandidates: SalesforceAccountCandidate[];
   accountName: string;
   accountNumber: string;
   accountDescription: string;
@@ -60,7 +62,16 @@ function normalizeRecheckResult(payload: unknown): RecheckResult {
   const result = unwrapRecheckPayload(payload);
   const reason = typeof result.reason === "string" ? result.reason.trim() : "";
   const matchedIn = toMatchedIn(result.matchedIn);
-  const accountFound = result.accountFound === true || Boolean(result.matchedAccountId) || matchedIn.includes("Account");
+  const matchedAccountCandidates = accountCandidatesFromPayload(result);
+  const first = matchedAccountCandidates[0];
+  const matchedAccountId = asString(result.matchedAccountId) || (first?.id ?? "");
+  const matchedAccountName = asString(result.matchedAccountName) || (first?.name ?? "");
+  const matchedAccountWebsite = asString(result.matchedAccountWebsite) || (first?.website ?? "");
+  const accountFound =
+    result.accountFound === true ||
+    Boolean(matchedAccountId) ||
+    matchedIn.includes("Account") ||
+    matchedAccountCandidates.length > 0;
   const prefillAccount = asObject(result.prefillAccount);
   return {
     existsInSalesforce: result.existsInSalesforce === true,
@@ -68,10 +79,11 @@ function normalizeRecheckResult(payload: unknown): RecheckResult {
     reason: reason || "Salesforce re-check afgerond zonder extra toelichting.",
     accountFound,
     salesforceMode: accountFound ? "create_contact_under_existing_account" : "create_account_then_contact",
-    matchedAccountId: asString(result.matchedAccountId),
-    matchedAccountName: asString(result.matchedAccountName),
-    matchedAccountWebsite: asString(result.matchedAccountWebsite),
-    accountName: asString(prefillAccount.name || result.matchedAccountName),
+    matchedAccountId,
+    matchedAccountName,
+    matchedAccountWebsite,
+    matchedAccountCandidates,
+    accountName: asString(prefillAccount.name || matchedAccountName),
     accountNumber: asString(prefillAccount.accountNumber),
     accountDescription: asString(prefillAccount.description || result.reason),
     checkedAt: typeof result.checkedAt === "string" ? result.checkedAt : undefined,
@@ -130,6 +142,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       matchedAccountId: result.matchedAccountId,
       matchedAccountName: result.matchedAccountName,
       matchedAccountWebsite: result.matchedAccountWebsite,
+      matchedAccountCandidates: result.matchedAccountCandidates,
       accountName: result.accountName,
       accountNumber: result.accountNumber,
       accountDescription: result.accountDescription,
