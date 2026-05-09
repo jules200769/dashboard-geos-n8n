@@ -352,15 +352,6 @@ export function LeadDetailDrawer({
                     />
                   </label>
                   <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-zinc-500">Account nummer</span>
-                    <input
-                      value={draft.account_number ?? ""}
-                      onChange={(event) => update("account_number", event.target.value)}
-                      placeholder="optioneel"
-                      className={fieldBase}
-                    />
-                  </label>
-                  <label className="space-y-1.5">
                     <span className="text-xs font-medium text-zinc-500">Domein / website</span>
                     <input
                       value={draft.sender_domain}
