@@ -33,6 +33,7 @@ export interface LeadRecord {
   sender_domain: string;
   phone_country_code?: string;
   phone_number?: string;
+  contact_title: string;
   subject: string;
   sentiment: string;
   sentiment_confidence: string;

@@ -1,0 +1,276 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "geos-lead-recheck",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ab1e8408-9aec-48e6-a3b8-ff87e33a8d40",
+      "name": "Dashboard Re-check Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        304
+      ],
+      "webhookId": "c15caeca-27d1-4ef8-945d-6df6f8ae1193"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body ?? {};\nconst contactName = String(body.contact_name ?? body.contactName ?? '').trim();\nconst nameParts = contactName.split(/\\s+/).filter(Boolean);\nconst firstName = String(body.firstName ?? (nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : nameParts[0] ?? '')).trim();\nconst lastName = String(body.lastName ?? (nameParts.length > 1 ? nameParts[nameParts.length - 1] : '')).trim();\nconst rawEmail = String(body.sender_email ?? body.email ?? '').trim();\nconst emailMatch = rawEmail.match(/<([^>]+)>/);\nconst email = (emailMatch?.[1] ?? rawEmail).trim().toLowerCase();\nconst company = String(body.org_name ?? body.company ?? '').trim();\nconst domain = String(body.sender_domain ?? (email.includes('@') ? email.split('@')[1] : '')).trim().toLowerCase();\nreturn [{ json: { leadId: String(body.leadId ?? body.id ?? '').trim(), contact_name: contactName, org_name: company, sender_email: email, sender_domain: domain, firstName, lastName, email, company, emailDomain: domain, previous_match_reason: String(body.match_reason ?? body.reason ?? '').trim() } }];"
+      },
+      "id": "18174b27-f563-474c-b605-a690e1cc4b57",
+      "name": "Normalize Lead Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Re-check whether this dashboard lead now exists in Salesforce. Lead data:\nName: {{ $json.contact_name }}\nEmail: {{ $json.email }}\nCompany: {{ $json.company }}\nEmail domain: {{ $json.emailDomain }}\nPrevious dashboard reason: {{ $json.previous_match_reason }}",
+        "options": {
+          "systemMessage": "You are a Salesforce duplicate checker for GEOS dashboard leads. Use the connected tools named Re-check Contact Search, Re-check Lead Search, and Re-check Account Search. Use only these standard Salesforce fields: Lead Id, Email, FirstName, LastName, Company, Status, Rating; Contact Id, Email, FirstName, LastName, AccountId, Phone; Account Id, Name, Website. Each Salesforce tool requires a complete SOQL SELECT query starting with SELECT. Step 1: search Contact by first and last name, never by email. Step 2: search Lead by email. Step 3: always search Account by company name and website domain when present. Step 4: if Account is found but Contact/Lead is not found, search Contacts under the AccountId by name before concluding. existsInSalesforce must be true only when the person is found as Contact or Lead. Account alone means the company was found but the person is new. Return only valid JSON with exactly these fields: existsInSalesforce boolean, matchedIn array of Contact Lead Account strings, reason string. The reason must explicitly say what matched or that no Contact, Lead, or Account/person was found for the name/email/company provided.",
+          "maxIterations": 7,
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "3c030ffa-51d5-40fb-a719-120455766932",
+      "name": "Salesforce Re-check Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        800,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "473537af-b8ee-4818-9e77-742e086471fe",
+      "name": "OpenAI Chat Model (Re-check)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        768,
+        560
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "IegzpK1IfJDjPwZS",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Run a full SOQL SELECT query to find an existing Contact by first name and last name. Do NOT search Contact by email. Skip if the name is empty or UNKNOWN-like.",
+        "resource": "search",
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', \"A full SOQL query starting with SELECT. Example: SELECT Id, Email, FirstName, LastName, AccountId FROM Contact WHERE FirstName = 'John' AND LastName = 'Doe' LIMIT 5\") }}"
+      },
+      "id": "d915b08b-9b02-4fa5-bdfb-01d95dc43c73",
+      "name": "Re-check Contact Search",
+      "type": "n8n-nodes-base.salesforceTool",
+      "typeVersion": 1,
+      "position": [
+        960,
+        560
+      ],
+      "credentials": {
+        "salesforceOAuth2Api": {
+          "id": "2d8FqMjpBnJ1R6x0",
+          "name": "Salesforce account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Run a full SOQL SELECT query to find an existing Lead by email. The query parameter must be a complete SOQL query starting with SELECT.",
+        "resource": "search",
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', \"A full SOQL query starting with SELECT. Example: SELECT Id, Email, FirstName, LastName, Company, Status FROM Lead WHERE Email = 'x@example.com' LIMIT 5\") }}"
+      },
+      "id": "e5569fb1-6942-4217-8651-9fb14e2c66a9",
+      "name": "Re-check Lead Search",
+      "type": "n8n-nodes-base.salesforceTool",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        560
+      ],
+      "credentials": {
+        "salesforceOAuth2Api": {
+          "id": "2d8FqMjpBnJ1R6x0",
+          "name": "Salesforce account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Run a full SOQL SELECT query to find an existing Account by company name or website domain. The query parameter must be a complete SOQL query starting with SELECT.",
+        "resource": "search",
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', \"A full SOQL query starting with SELECT. Example: SELECT Id, Name, Website FROM Account WHERE Name LIKE '%CompanyName%' LIMIT 5\") }}"
+      },
+      "id": "73b91205-80b8-4853-a105-ff20aa09628e",
+      "name": "Re-check Account Search",
+      "type": "n8n-nodes-base.salesforceTool",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        560
+      ],
+      "credentials": {
+        "salesforceOAuth2Api": {
+          "id": "2d8FqMjpBnJ1R6x0",
+          "name": "Salesforce account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json ?? {};\nconst normalized = $('Normalize Lead Payload').first().json ?? {};\nlet parsed = item.output ?? item;\nif (typeof parsed === 'string') {\n  const jsonMatch = parsed.match(/\\{[\\s\\S]*\\}/);\n  parsed = JSON.parse(jsonMatch ? jsonMatch[0] : parsed);\n}\nconst matchedIn = Array.isArray(parsed.matchedIn) ? parsed.matchedIn.map(String).filter(Boolean) : [];\nconst reason = String(parsed.reason ?? '').trim() || `Salesforce re-check completed for ${normalized.contact_name || normalized.email || 'lead'}.`;\nreturn [{ json: { leadId: normalized.leadId, existsInSalesforce: Boolean(parsed.existsInSalesforce), matchedIn, reason, checkedAt: new Date().toISOString(), source: 'n8n-salesforce-recheck', rawAgentOutput: item.output ?? item } }];"
+      },
+      "id": "2102b343-4bc4-46d3-b000-7111d5223388",
+      "name": "Parse Re-check Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "9ffb4d92-c21f-4fda-8122-b1ce7509c0bf",
+      "name": "Respond With Re-check Result",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1360,
+        304
+      ]
+    }
+  ],
+  "connections": {
+    "Dashboard Re-check Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lead Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lead Payload": {
+      "main": [
+        [
+          {
+            "node": "Salesforce Re-check Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salesforce Re-check Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Re-check Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model (Re-check)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Salesforce Re-check Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Re-check Contact Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Salesforce Re-check Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Re-check Lead Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Salesforce Re-check Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Re-check Account Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Salesforce Re-check Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Re-check Result": {
+      "main": [
+        [
+          {
+            "node": "Respond With Re-check Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "aiBuilderAssisted": true,
+    "instanceId": "4060e78ae4499c8be111ea60ebeaabe0fa1856e236133ef41e930a0ed44887e4"
+  }
+}

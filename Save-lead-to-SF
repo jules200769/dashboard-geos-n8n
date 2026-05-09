@@ -1,0 +1,302 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "geos-save-to-sf",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b4a2ee49-bc62-43c6-a86b-dcfb2b358367",
+      "name": "Dashboard Save Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        304
+      ],
+      "webhookId": "05f92cec-29ea-47e4-8565-db013c7ce225"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = ($input.first().json && $input.first().json.body) ? $input.first().json.body : ($input.first().json || {});\nconst account = body.account && typeof body.account === 'object' ? body.account : {};\nconst contact = body.contact && typeof body.contact === 'object' ? body.contact : {};\n\nconst fullName = String(contact.full_name || body.contact_name || '').trim();\nconst nameParts = fullName.split(/\\s+/).filter(Boolean);\nconst firstName = nameParts.length > 1 ? nameParts[0] : '';\nlet lastName = 'Unknown';\nif (nameParts.length > 1) {\n  lastName = nameParts[1];\n  for (let i = 2; i < nameParts.length; i++) lastName += ' ' + nameParts[i];\n} else if (nameParts.length === 1) {\n  lastName = nameParts[0];\n}\n\nconst phoneCountry = String(contact.phone_country_code || '').trim();\nconst phoneLocal = String(contact.phone_number || '').trim();\nconst phoneCombined = (phoneCountry && phoneLocal) ? (phoneCountry + ' ' + phoneLocal) : (phoneLocal || phoneCountry);\n\nconst accountId = String(account.id || body.matched_account_id || '').trim();\nconst accountName = String(account.name || body.account_name || body.matched_account_name || body.org_name || '').trim();\nconst website = String(account.website || body.matched_account_website || '').trim();\nconst accountNumber = String(account.number || body.account_number || '').trim();\nconst accountDescription = String(account.description || body.account_description || body.match_reason || '').trim();\n\nconst salesforceMode = String(body.salesforce_mode || '').trim();\nconst needsAccount = salesforceMode === 'create_account_then_contact' || !accountId;\n\nconst contactTitle = String(contact.title ?? body.contact_title ?? '').trim();\n\nreturn [{\n  json: {\n    leadId: String(body.id || ''),\n    salesforceMode: salesforceMode,\n    needsAccount: needsAccount,\n    accountId: accountId,\n    accountName: accountName || 'Unknown Company',\n    website: website,\n    accountNumber: accountNumber,\n    accountDescription: accountDescription,\n    industry: String(body.industry || ''),\n    firstName: firstName,\n    lastName: lastName,\n    email: String(contact.email || body.sender_email || '').trim(),\n    phone: phoneCombined,\n    contactDescription: String(contact.description || body.suggested_action || '').trim(),\n    contactTitle: contactTitle\n  }\n}];"
+      },
+      "id": "2ee3de3c-f629-4d99-b87e-8394bfe6efcf",
+      "name": "Parse Save Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "needs-account-check",
+              "leftValue": "={{ $json.needsAccount }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7de4df27-ee45-47f3-9645-a779429e5d63",
+      "name": "Needs New Account?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        688,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "account",
+        "name": "={{ $json.accountName }}",
+        "additionalFields": {
+          "accountNumber": "={{ $json.accountNumber }}",
+          "description": "={{ $json.accountDescription }}",
+          "industry": "={{ $json.industry }}",
+          "phone": "={{ $json.phone }}",
+          "website": "={{ $json.website }}"
+        }
+      },
+      "id": "3ab769ca-653b-4b12-bbc4-28dc24057eaa",
+      "name": "SF Create Account",
+      "type": "n8n-nodes-base.salesforce",
+      "typeVersion": 1,
+      "position": [
+        912,
+        208
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "salesforceOAuth2Api": {
+          "id": "2d8FqMjpBnJ1R6x0",
+          "name": "Salesforce account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const newAcc = $input.first().json || {};\nconst original = $('Parse Save Payload').first().json || {};\nreturn [{\n  json: Object.assign({}, original, {\n    accountId: String(newAcc.id || ''),\n    accountCreated: true\n  })\n}];"
+      },
+      "id": "cff8f246-1cdf-4285-8ca2-39557547b276",
+      "name": "Use New Account ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        208
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "8046c6c9-485d-4f43-b9c4-3c45bb503540",
+      "name": "Merge Branches",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1344,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const original = $input.first().json || {};\nreturn [{\n  json: Object.assign({}, original, {\n    accountCreated: false\n  })\n}];"
+      },
+      "id": "04997b4c-d20a-45ae-9941-9e7ba2aa577f",
+      "name": "Use Matched Account ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "contact",
+        "lastname": "={{ $json.lastName }}",
+        "additionalFields": {
+          "acconuntId": "={{ $json.accountId }}",
+          "description": "={{ $json.contactDescription }}",
+          "email": "={{ $json.email }}",
+          "firstName": "={{ $json.firstName }}",
+          "phone": "={{ $json.phone }}",
+          "title": "={{ $json.contactTitle }}"
+        }
+      },
+      "id": "d4103000-e190-449b-ae92-2c1ccc7bf2b8",
+      "name": "SF Create Contact",
+      "type": "n8n-nodes-base.salesforce",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        304
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "salesforceOAuth2Api": {
+          "id": "2d8FqMjpBnJ1R6x0",
+          "name": "Salesforce account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const contactResult = $input.first().json || {};\nconst merged = $('Merge Branches').first().json || {};\n\nreturn [{\n  json: {\n    ok: Boolean(contactResult.success),\n    salesforce_account_id: String(merged.accountId || ''),\n    salesforce_contact_id: String(contactResult.id || ''),\n    accountCreated: Boolean(merged.accountCreated),\n    leadId: String(merged.leadId || ''),\n    saved_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "24548778-78fb-4835-8ae0-5e2685b05359",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "cd5c9764-6abf-4227-8ca4-4780992b7d4e",
+      "name": "Respond to Dashboard",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2000,
+        304
+      ]
+    }
+  ],
+  "connections": {
+    "Dashboard Save Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Save Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Save Payload": {
+      "main": [
+        [
+          {
+            "node": "Needs New Account?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs New Account?": {
+      "main": [
+        [
+          {
+            "node": "SF Create Account",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Use Matched Account ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SF Create Account": {
+      "main": [
+        [
+          {
+            "node": "Use New Account ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use New Account ID": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Branches": {
+      "main": [
+        [
+          {
+            "node": "SF Create Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use Matched Account ID": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "SF Create Contact": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "aiBuilderAssisted": true,
+    "instanceId": "4060e78ae4499c8be111ea60ebeaabe0fa1856e236133ef41e930a0ed44887e4"
+  }
+}

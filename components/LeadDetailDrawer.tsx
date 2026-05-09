@@ -315,6 +315,15 @@ export function LeadDetailDrawer({
                     />
                   </label>
                   <label className="space-y-1.5">
+                    <span className="text-xs font-medium text-zinc-500">Functietitel (Title)</span>
+                    <input
+                      value={draft.contact_title ?? ""}
+                      onChange={(event) => update("contact_title", event.target.value)}
+                      placeholder="optioneel — Salesforce Contact Title"
+                      className={fieldBase}
+                    />
+                  </label>
+                  <label className="space-y-1.5">
                     <span className="text-xs font-medium text-zinc-500">Bedrijf</span>
                     <input
                       value={draft.org_name}

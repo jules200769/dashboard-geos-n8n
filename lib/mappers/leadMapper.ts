@@ -108,6 +108,7 @@ export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
     sender_domain: senderDomain,
     phone_country_code: asString(payload.phone_country_code),
     phone_number: asString(payload.phone_number),
+    contact_title: asString(payload.contact_title || payload.contactTitle),
     subject: asString(payload.subject),
     sentiment,
     sentiment_confidence: asString(payload.confidence || payload.sentimentConfidence, "N/A"),
@@ -170,6 +171,7 @@ export function mapLeadForSave(lead: LeadRecord): Record<string, unknown> {
       email: lead.sender_email,
       phone_country_code: lead.phone_country_code,
       phone_number: lead.phone_number,
+      title: lead.contact_title,
       description: lead.suggested_action,
     },
     account: {
