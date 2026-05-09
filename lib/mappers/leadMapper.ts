@@ -210,6 +210,7 @@ export function mapLeadForSave(lead: LeadRecord): Record<string, unknown> {
       number: lead.account_number,
       description: lead.account_description,
       website: lead.matched_account_website || (lead.sender_domain ? `https://${lead.sender_domain}` : ""),
+      industry: lead.industry,
     },
     saved_at: new Date().toISOString(),
   };

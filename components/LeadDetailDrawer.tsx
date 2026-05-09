@@ -15,9 +15,12 @@ const fieldBase = `w-full ${fieldBaseCore}`;
 function IndustrySelect({
   value,
   onChange,
+  label = "Industrie",
 }: {
   value: string;
   onChange: (val: LeadRecord["industry"]) => void;
+  /** Shown before the value, e.g. "Accountindustrie" on the Account tab for new-account flow. */
+  label?: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -29,7 +32,7 @@ function IndustrySelect({
         className="flex w-full items-center justify-between rounded-2xl border border-zinc-200/90 bg-white px-3.5 py-2.5 text-left text-sm text-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out hover:bg-zinc-50/80 focus:outline-none focus:ring-[3px] focus:ring-sky-500/15"
       >
         <span>
-          <span className="text-xs font-medium text-zinc-500">Industrie: </span>
+          <span className="text-xs font-medium text-zinc-500">{label}: </span>
           {value || "diverse"}
         </span>
         <span className={`shrink-0 transition-transform duration-200 ease-out ${open ? "rotate-180" : ""}`}>
@@ -359,6 +362,11 @@ export function LeadDetailDrawer({
                       className={fieldBase}
                     />
                   </label>
+                  <IndustrySelect
+                    label="Accountindustrie"
+                    value={draft.industry}
+                    onChange={(val) => update("industry", val)}
+                  />
                   <label className="space-y-1.5">
                     <span className="text-xs font-medium text-zinc-500">Description</span>
                     <textarea
@@ -376,16 +384,6 @@ export function LeadDetailDrawer({
                       selectedId={draft.matched_account_id}
                       onSelect={applyAccountCandidate}
                     />
-                  )}
-                  {usesExistingAccount && (
-                    <label className="space-y-1.5">
-                      <span className="text-xs font-medium text-zinc-500">Account name</span>
-                      <input
-                        value={draft.account_name || draft.matched_account_name || draft.org_name}
-                        onChange={(event) => update("account_name", event.target.value)}
-                        className={fieldBase}
-                      />
-                    </label>
                   )}
                   <label className="space-y-1.5">
                     <span className="text-xs font-medium text-zinc-500">Naam</span>
@@ -443,10 +441,12 @@ export function LeadDetailDrawer({
                       />
                     </div>
                   </label>
-                  <IndustrySelect
-                    value={draft.industry}
-                    onChange={(val) => update("industry", val)}
-                  />
+                  {usesExistingAccount && (
+                    <IndustrySelect
+                      value={draft.industry}
+                      onChange={(val) => update("industry", val)}
+                    />
+                  )}
                   <label className="space-y-1.5">
                     <span className="text-xs font-medium text-zinc-500">Aanbevolen actie / Contact description</span>
                     <textarea
@@ -468,7 +468,7 @@ export function LeadDetailDrawer({
                 {usesExistingAccount && (
                   <p>
                     Contact wordt gekoppeld aan:{" "}
-                    {draft.account_name || draft.matched_account_name || draft.org_name || "gevonden Account"}
+                    {draft.matched_account_name || draft.account_name || draft.org_name || "gevonden Account"}
                     {draft.matched_account_id ? ` (${draft.matched_account_id})` : ""}
                   </p>
                 )}
