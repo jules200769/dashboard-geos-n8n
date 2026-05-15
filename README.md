@@ -13,9 +13,23 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). Je wordt doorgestuurd naar `/login` om je toegangscode in te voeren.
 
-## 2) Supabase setup
+## 2) Dashboardtoegang (middleware)
+
+Dit dashboard is bedoeld voor één gebruiker en gebruikt **geen** Supabase Auth. Toegang loopt via een toegangscode en een httpOnly sessie-cookie.
+
+1. Kies een lange, willekeurige code (bijv. 32+ tekens).
+2. Zet in `.env.local`:
+   - `DASHBOARD_ACCESS_CODE` — de code die je op `/login` intypt
+
+Zonder deze variabele is het dashboard niet bereikbaar (bewust, ook lokaal).
+
+- UI en API-routes (`/`, `/api/leads`, enz.) zijn beschermd door [`middleware.ts`](middleware.ts).
+- `POST /api/webhooks/lead-not-found` blijft buiten deze login en gebruikt alleen `N8N_WEBHOOK_SECRET` (optioneel).
+- Uitloggen kan via de knop op het dashboard of `POST /api/auth/logout`.
+
+## 3) Supabase setup
 
 1. Maak een Supabase project.
 2. Voer SQL uit uit `supabase/schema.sql`.
@@ -24,7 +38,7 @@ Open [http://localhost:3000](http://localhost:3000).
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
 
-## 3) n8n koppeling
+## 4) n8n koppeling
 
 ### Ingest endpoint (n8n -> dashboard)
 `POST /api/webhooks/lead-not-found`
@@ -82,11 +96,12 @@ De route zet status op `saved` in Supabase en forwardt payload naar:
 
 `N8N_SAVE_WEBHOOK_URL`
 
-## 4) Vercel deploy
+## 5) Vercel deploy
 
 1. Push project naar GitHub.
 2. Import project in Vercel.
 3. Zet environment variables:
+   - `DASHBOARD_ACCESS_CODE` (verplicht)
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
@@ -94,7 +109,7 @@ De route zet status op `saved` in Supabase en forwardt payload naar:
    - `N8N_WEBHOOK_SECRET` (optioneel)
 4. Deploy.
 
-## 5) Testflow (end-to-end)
+## 6) Testflow (end-to-end)
 
 1. Start lokaal of open Vercel URL.
 2. Trigger ingest via n8n HTTP Request node naar `/api/webhooks/lead-not-found`.
@@ -107,6 +122,8 @@ De route zet status op `saved` in Supabase en forwardt payload naar:
 
 ## API overzicht
 
+- `POST /api/auth/login` — toegangscode, zet sessie-cookie
+- `POST /api/auth/logout` — verwijdert sessie-cookie
 - `POST /api/webhooks/lead-not-found`
 - `GET /api/leads`
 - `GET /api/metrics`

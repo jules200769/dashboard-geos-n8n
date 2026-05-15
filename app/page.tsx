@@ -213,13 +213,25 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={loadDashboard}
-            className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-base font-medium text-zinc-700 hover:bg-zinc-50"
-          >
-            Vernieuwen
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={loadDashboard}
+              className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-base font-medium text-zinc-700 hover:bg-zinc-50"
+            >
+              Vernieuwen
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                await fetch("/api/auth/logout", { method: "POST" });
+                window.location.href = "/login";
+              }}
+              className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-base font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700"
+            >
+              Uitloggen
+            </button>
+          </div>
         </header>
 
         {feedback && (
