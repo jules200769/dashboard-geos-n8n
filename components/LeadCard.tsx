@@ -62,20 +62,20 @@ export function LeadCard({
 
       <div className="space-y-1 text-base text-zinc-700">
         <p>
-          <span className="font-medium">E-mail:</span> {lead.sender_email || "-"}
+          <span className="font-medium text-zinc-500">E-mail:</span> {lead.sender_email || "-"}
         </p>
         {lead.phone_number && (
           <p>
-            <span className="font-medium">Tel:</span>{" "}
+            <span className="font-medium text-zinc-500">Tel:</span>{" "}
             {lead.phone_country_code ? `${lead.phone_country_code} ${lead.phone_number}` : lead.phone_number}
           </p>
         )}
         <p>
-          <span className="font-medium">Domein:</span> {lead.sender_domain || "-"}
+          <span className="font-medium text-zinc-500">Domein:</span> {lead.sender_domain || "-"}
         </p>
         {lead.salesforce_mode === "create_contact_under_existing_account" && (
           <p>
-            <span className="font-medium">Account:</span>{" "}
+            <span className="font-medium text-zinc-500">Account:</span>{" "}
             {lead.account_name || lead.matched_account_name || "gevonden Account"}
           </p>
         )}
