@@ -12,7 +12,7 @@ function isApiPath(pathname: string): boolean {
   return pathname.startsWith("/api/");
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (PUBLIC_PATHS.has(pathname)) {

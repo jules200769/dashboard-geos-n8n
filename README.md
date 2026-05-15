@@ -15,7 +15,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Je wordt doorgestuurd naar `/login` om je toegangscode in te voeren.
 
-## 2) Dashboardtoegang (middleware)
+## 2) Dashboardtoegang (proxy)
 
 Dit dashboard is bedoeld voor één gebruiker en gebruikt **geen** Supabase Auth. Toegang loopt via een toegangscode en een httpOnly sessie-cookie.
 
@@ -25,7 +25,7 @@ Dit dashboard is bedoeld voor één gebruiker en gebruikt **geen** Supabase Auth
 
 Zonder deze variabele is het dashboard niet bereikbaar (bewust, ook lokaal).
 
-- UI en API-routes (`/`, `/api/leads`, enz.) zijn beschermd door [`middleware.ts`](middleware.ts).
+- UI en API-routes (`/`, `/api/leads`, enz.) zijn beschermd door [`proxy.ts`](proxy.ts).
 - `POST /api/webhooks/lead-not-found` blijft buiten deze login en gebruikt alleen `N8N_WEBHOOK_SECRET` (optioneel).
 - Uitloggen kan via de knop op het dashboard of `POST /api/auth/logout`.
 
