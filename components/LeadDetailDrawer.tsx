@@ -458,24 +458,6 @@ export function LeadDetailDrawer({
                 </div>
               )}
 
-              <div className="mt-6 rounded-2xl border border-zinc-200/70 bg-gradient-to-b from-zinc-50/80 to-zinc-50/40 p-4 text-sm leading-relaxed text-zinc-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
-                <p className="font-semibold text-zinc-900">Context voor Salesforce review</p>
-                <p className="mt-2">Leadscore: {draft.lead_rating}</p>
-                <p>Intentie: {draft.intent || "-"}</p>
-                <p>Industrie: {draft.industry || "diverse"}</p>
-                <p>Hoofdonderwerp: {draft.primary_topic || "-"}</p>
-                <p>Salesforce actie: {accountModeLabel(draft.salesforce_mode)}</p>
-                {usesExistingAccount && (
-                  <p>
-                    Contact wordt gekoppeld aan:{" "}
-                    {draft.matched_account_name || draft.account_name || draft.org_name || "gevonden Account"}
-                    {draft.matched_account_id ? ` (${draft.matched_account_id})` : ""}
-                  </p>
-                )}
-                <p>Match gevonden in: {draft.matched_in.join(", ") || "Geen overeenkomst"}</p>
-                <p>Reden not-found: {draft.match_reason || "Niet gevonden in Salesforce"}</p>
-              </div>
-
               {step === "account" && !usesExistingAccount ? (
                 <button
                   type="button"
