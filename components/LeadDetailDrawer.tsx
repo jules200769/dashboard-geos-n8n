@@ -32,7 +32,7 @@ function IndustrySelect({
         className="flex w-full items-center justify-between rounded-2xl border border-zinc-200/90 bg-white px-3.5 py-2.5 text-left text-sm text-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out hover:bg-zinc-50/80 focus:outline-none focus:ring-[3px] focus:ring-sky-500/15"
       >
         <span>
-          <span className="text-xs font-medium text-zinc-500">{label}: </span>
+          <span className="text-xs font-medium text-zinc-900">{label}: </span>
           {value || "diverse"}
         </span>
         <span className={`shrink-0 transition-transform duration-200 ease-out ${open ? "rotate-180" : ""}`}>
@@ -88,7 +88,7 @@ function AccountCandidateSelect({
         className="flex w-full items-start justify-between gap-2 rounded-2xl border border-zinc-200/90 bg-white px-3.5 py-2.5 text-left text-sm shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out hover:bg-zinc-50/80 focus:outline-none focus:ring-[3px] focus:ring-sky-500/25"
       >
         <span className="min-w-0 flex-1">
-          <span className="text-xs font-medium text-zinc-500">Salesforce-account: </span>
+          <span className="text-xs font-medium text-zinc-900">Salesforce-account: </span>
           {selected ? (
             <span className="mt-0.5 flex flex-col gap-0.5">
               <span className="font-medium text-zinc-900">{selected.name || selected.id}</span>
@@ -347,7 +347,7 @@ export function LeadDetailDrawer({
               {step === "account" && !usesExistingAccount ? (
                 <div className="grid grid-cols-1 gap-4">
                   <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-zinc-500">Account name</span>
+                    <span className="text-xs font-medium text-zinc-900">Account name</span>
                     <input
                       value={draft.account_name || draft.org_name}
                       onChange={(event) => update("account_name", event.target.value)}
@@ -355,7 +355,7 @@ export function LeadDetailDrawer({
                     />
                   </label>
                   <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-zinc-500">Domein / website</span>
+                    <span className="text-xs font-medium text-zinc-900">Domein / website</span>
                     <input
                       value={draft.sender_domain}
                       onChange={(event) => update("sender_domain", event.target.value)}
@@ -368,7 +368,7 @@ export function LeadDetailDrawer({
                     onChange={(val) => update("industry", val)}
                   />
                   <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-zinc-500">Description</span>
+                    <span className="text-xs font-medium text-zinc-900">Description</span>
                     <textarea
                       value={draft.account_description ?? ""}
                       onChange={(event) => update("account_description", event.target.value)}
@@ -386,7 +386,7 @@ export function LeadDetailDrawer({
                     />
                   )}
                   <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-zinc-500">Naam</span>
+                    <span className="text-xs font-medium text-zinc-900">Naam</span>
                     <input
                       value={draft.contact_name}
                       onChange={(event) => update("contact_name", event.target.value)}
@@ -394,7 +394,7 @@ export function LeadDetailDrawer({
                     />
                   </label>
                   <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-zinc-500">Functietitel (Title)</span>
+                    <span className="text-xs font-medium text-zinc-900">Functietitel (Title)</span>
                     <input
                       value={draft.contact_title ?? ""}
                       onChange={(event) => update("contact_title", event.target.value)}
@@ -403,7 +403,7 @@ export function LeadDetailDrawer({
                     />
                   </label>
                   <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-zinc-500">Bedrijf</span>
+                    <span className="text-xs font-medium text-zinc-900">Bedrijf</span>
                     <input
                       value={draft.org_name}
                       onChange={(event) => update("org_name", event.target.value)}
@@ -411,7 +411,7 @@ export function LeadDetailDrawer({
                     />
                   </label>
                   <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-zinc-500">E-mail</span>
+                    <span className="text-xs font-medium text-zinc-900">E-mail</span>
                     <input
                       value={draft.sender_email}
                       onChange={(event) => update("sender_email", event.target.value)}
@@ -419,7 +419,7 @@ export function LeadDetailDrawer({
                     />
                   </label>
                   <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-zinc-500">Telefoonnummer</span>
+                    <span className="text-xs font-medium text-zinc-900">Telefoonnummer</span>
                     <div className="flex min-w-0 gap-2">
                       <select
                         value={draft.phone_country_code || "+32"}
@@ -448,7 +448,7 @@ export function LeadDetailDrawer({
                     />
                   )}
                   <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-zinc-500">Aanbevolen actie / Contact description</span>
+                    <span className="text-xs font-medium text-zinc-900">Aanbevolen actie / Contact description</span>
                     <textarea
                       value={draft.suggested_action}
                       onChange={(event) => update("suggested_action", event.target.value)}
