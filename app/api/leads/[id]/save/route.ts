@@ -56,10 +56,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
       };
     }
 
-    const updated = await markLeadSaved(id, {
-      ...savePayload,
-      webhookStatus: webhookResult,
-    });
+    const updated = await markLeadSaved(
+      id,
+      {
+        ...savePayload,
+        webhookStatus: webhookResult,
+      },
+      leadForSave,
+    );
 
     return NextResponse.json({
       lead: updated,

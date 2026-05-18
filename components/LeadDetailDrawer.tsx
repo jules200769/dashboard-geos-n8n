@@ -387,11 +387,29 @@ export function LeadDetailDrawer({
                   )}
                   <label className="space-y-1.5">
                     <span className="text-xs font-medium text-zinc-900">Naam</span>
-                    <input
-                      value={draft.contact_name}
-                      onChange={(event) => update("contact_name", event.target.value)}
-                      className={fieldBase}
-                    />
+                    <div className="flex min-w-0 gap-2">
+                      <select
+                        value={draft.contact_gender || ""}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          update(
+                            "contact_gender",
+                            value === "man" || value === "vrouw" ? value : "",
+                          );
+                        }}
+                        className={`w-fit shrink-0 pl-2 pr-7 ${fieldBaseShell}`}
+                        aria-label="Gender"
+                      >
+                        <option value="">Gender</option>
+                        <option value="man">Man</option>
+                        <option value="vrouw">Vrouw</option>
+                      </select>
+                      <input
+                        value={draft.contact_name}
+                        onChange={(event) => update("contact_name", event.target.value)}
+                        className={`min-w-0 flex-1 ${fieldBaseCore}`}
+                      />
+                    </div>
                   </label>
                   <label className="space-y-1.5">
                     <span className="text-xs font-medium text-zinc-900">Functietitel (Title)</span>

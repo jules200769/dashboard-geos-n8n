@@ -24,6 +24,9 @@ export const INDUSTRY_OPTIONS = [
 
 export type Industry = (typeof INDUSTRY_OPTIONS)[number];
 
+export const CONTACT_GENDER_OPTIONS = ["man", "vrouw"] as const;
+export type ContactGender = (typeof CONTACT_GENDER_OPTIONS)[number];
+
 /** Salesforce Account rows surfaced for dashboard account picker (Id/Name/Website). */
 export interface SalesforceAccountCandidate {
   id: string;
@@ -35,6 +38,7 @@ export interface LeadRecord {
   id: string;
   source_message_id: string | null;
   contact_name: string;
+  contact_gender?: ContactGender | "";
   org_name: string;
   sender_email: string;
   sender_domain: string;

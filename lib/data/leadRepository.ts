@@ -26,6 +26,7 @@ function getMockStore(): LeadRecord[] {
       phone_country_code: "+31",
       phone_number: "612345678",
       contact_title: "",
+      contact_gender: "",
       sentiment_confidence: "0.78",
       secondary_topics: "pricing, availability",
       budget_mentioned: true,
@@ -170,6 +171,7 @@ export async function upsertLead(lead: Partial<LeadRecord>): Promise<LeadRecord>
         industry: (lead.industry ?? "diverse") as Industry,
         email_body: lead.email_body ?? "",
         contact_title: lead.contact_title ?? "",
+        contact_gender: lead.contact_gender ?? "",
         exists_in_salesforce: lead.exists_in_salesforce ?? false,
         matched_in: lead.matched_in ?? [],
         match_reason: lead.match_reason ?? "",
@@ -223,9 +225,34 @@ export async function deleteLead(id: string): Promise<void> {
   if (error) throw error;
 }
 
+function draftFieldsForSave(draft?: Partial<LeadRecord>): Partial<LeadRecord> {
+  if (!draft) return {};
+  const fields: Partial<LeadRecord> = {
+    contact_name: draft.contact_name,
+    contact_gender: draft.contact_gender,
+    org_name: draft.org_name,
+    sender_email: draft.sender_email,
+    sender_domain: draft.sender_domain,
+    phone_country_code: draft.phone_country_code,
+    phone_number: draft.phone_number,
+    contact_title: draft.contact_title,
+    suggested_action: draft.suggested_action,
+    industry: draft.industry,
+    account_name: draft.account_name,
+    account_description: draft.account_description,
+    matched_account_id: draft.matched_account_id,
+    matched_account_name: draft.matched_account_name,
+    matched_account_website: draft.matched_account_website,
+  };
+  return Object.fromEntries(
+    Object.entries(fields).filter(([, value]) => value !== undefined),
+  ) as Partial<LeadRecord>;
+}
+
 export async function markLeadSaved(
   id: string,
   savePayload: Record<string, unknown>,
+  draft?: Partial<LeadRecord>,
 ): Promise<LeadRecord> {
   if (envFlag("MOCK_LEADS")) {
     const store = getMockStore();
@@ -234,6 +261,7 @@ export async function markLeadSaved(
     const now = new Date().toISOString();
     const updated: LeadRecord = {
       ...store[idx],
+      ...draftFieldsForSave(draft),
       status: "saved",
       saved_at: now,
       save_payload: savePayload,
@@ -246,6 +274,7 @@ export async function markLeadSaved(
   const { data, error } = await supabase
     .from(TABLE)
     .update({
+      ...draftFieldsForSave(draft),
       status: "saved",
       saved_at: new Date().toISOString(),
       save_payload: savePayload,

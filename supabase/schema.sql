@@ -4,6 +4,7 @@ create table if not exists public.lead_queue (
   id uuid primary key default gen_random_uuid(),
   source_message_id text unique,
   contact_name text not null default '',
+  contact_gender text not null default '' check (contact_gender in ('', 'man', 'vrouw')),
   org_name text not null default '',
   sender_email text not null default '',
   sender_domain text not null default '',
@@ -56,6 +57,9 @@ alter table public.lead_queue add column if not exists account_name text not nul
 alter table public.lead_queue add column if not exists account_number text not null default '';
 alter table public.lead_queue add column if not exists account_description text not null default '';
 alter table public.lead_queue add column if not exists matched_account_candidates jsonb not null default '[]'::jsonb;
+alter table public.lead_queue add column if not exists contact_gender text not null default '';
+alter table public.lead_queue drop constraint if exists lead_queue_contact_gender_check;
+alter table public.lead_queue add constraint lead_queue_contact_gender_check check (contact_gender in ('', 'man', 'vrouw'));
 
 create or replace function public.set_updated_at()
 returns trigger

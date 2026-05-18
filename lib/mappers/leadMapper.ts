@@ -1,5 +1,11 @@
-import type { LeadRecord, Industry, SalesforceMode, SalesforceAccountCandidate } from "../types";
-import { INDUSTRY_OPTIONS } from "../types";
+import type {
+  LeadRecord,
+  Industry,
+  SalesforceMode,
+  SalesforceAccountCandidate,
+  ContactGender,
+} from "../types";
+import { CONTACT_GENDER_OPTIONS, INDUSTRY_OPTIONS } from "../types";
 
 type AnyJson = Record<string, unknown>;
 
@@ -74,6 +80,11 @@ function toIndustry(value: unknown): Industry {
   return match ?? "diverse";
 }
 
+function toContactGender(value: unknown): ContactGender | "" {
+  const raw = asString(value).trim().toLowerCase();
+  return CONTACT_GENDER_OPTIONS.includes(raw as ContactGender) ? (raw as ContactGender) : "";
+}
+
 function inferLeadRating(sentiment: string, urgency: number): "Hot" | "Warm" | "Cold" {
   if (sentiment === "Positive" && urgency >= 7) return "Hot";
   if (sentiment === "Negative") return "Cold";
@@ -132,6 +143,7 @@ export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
   return {
     source_message_id: asString(payload.message_id || payload.id) || null,
     contact_name: asString(payload.contact_name),
+    contact_gender: toContactGender(payload.contact_gender ?? payload.contactGender ?? payload.gender),
     org_name: asString(payload.org_name || payload.company),
     sender_email: senderEmail,
     sender_domain: senderDomain,
@@ -176,6 +188,7 @@ export function mapLeadForSave(lead: LeadRecord): Record<string, unknown> {
   return {
     id: lead.id,
     contact_name: lead.contact_name,
+    contact_gender: lead.contact_gender ?? "",
     org_name: lead.org_name,
     sender_email: lead.sender_email,
     sender_domain: lead.sender_domain,
@@ -198,6 +211,7 @@ export function mapLeadForSave(lead: LeadRecord): Record<string, unknown> {
     account_description: lead.account_description,
     contact: {
       full_name: lead.contact_name,
+      gender: lead.contact_gender ?? "",
       email: lead.sender_email,
       phone_country_code: lead.phone_country_code,
       phone_number: lead.phone_number,
