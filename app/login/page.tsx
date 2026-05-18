@@ -47,7 +47,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-full flex-1 items-center justify-center bg-zinc-50 px-4 py-12">
+    <div className="flex min-h-dvh flex-1 items-center justify-center overflow-y-auto bg-zinc-50 px-4 py-12">
       <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
         <div className="mb-8 flex justify-center">
           <Image
@@ -114,7 +114,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-full items-center justify-center text-zinc-600">
+        <div className="flex min-h-dvh items-center justify-center text-zinc-600">
           Laden…
         </div>
       }

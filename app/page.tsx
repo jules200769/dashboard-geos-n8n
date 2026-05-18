@@ -4,8 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   Legend,
   Line,
@@ -14,16 +12,11 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import { LeadCard } from "@/components/LeadCard";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { fetchLeads, ignoreLead, recheckLead, saveLead } from "@/lib/api";
 import type { LeadRecord, MetricsResponse } from "@/lib/types";
-
-const COLORS = ['#7c3aed', '#0284c7', '#16a34a', '#ea580c', '#e11d48', '#d97706'];
 
 const emptyMetrics: MetricsResponse = {
   openLeads: 0,
@@ -188,9 +181,9 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-100 text-zinc-900">
-      <main className="mx-auto max-w-[1600px] px-6 py-8 md:px-12">
-        <header className="mb-8 flex flex-wrap items-center justify-between gap-3">
+    <div className="flex min-h-dvh flex-col bg-zinc-100 text-zinc-900 xl:min-h-0 xl:flex-1 xl:overflow-hidden">
+      <main className="mx-auto flex w-full max-w-[1600px] flex-col px-6 py-4 pb-8 md:px-12 md:py-5 xl:flex-1 xl:min-h-0 xl:overflow-hidden xl:pb-5">
+        <header className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <Link
               href="/"
@@ -270,16 +263,16 @@ export default function Home() {
           </div>
         )}
 
-        <section className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <section className="mb-4 grid shrink-0 grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
           <KpiTile title="Open leads" value={metrics.openLeads} titleLogo="gmail" />
           <KpiTile title="Vandaag opgeslagen" value={metrics.savedToday} titleLogo="salesforce" />
           <KpiTile title="Geschatte tijdsbesparing (min)" value={metrics.estimatedTimeSavedMinutes} />
         </section>
 
-        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-base font-semibold text-zinc-800">Open vs opgeslagen (laatste 14 dagen)</h2>
-            <div className="h-80">
+        <section className="grid grid-cols-1 gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-2 xl:grid-rows-1 xl:gap-6 xl:overflow-hidden">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm md:p-6 xl:flex xl:min-h-0 xl:flex-col">
+            <h2 className="mb-3 text-base font-semibold text-zinc-800 xl:shrink-0">Open vs opgeslagen (laatste 14 dagen)</h2>
+            <div className="h-72 w-full shrink-0 xl:h-auto xl:min-h-0 xl:flex-1">
               {hasMounted ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={metrics.openVsSavedSeries}>
@@ -295,8 +288,8 @@ export default function Home() {
               ) : null}
             </div>
           </div>
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm flex flex-col">
-            <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm md:p-6 xl:min-h-0">
+            <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
               <h2 className="flex flex-wrap items-center gap-2 text-base font-semibold text-zinc-800">
                 <span>Potentiële Salesforce contacten</span>
                 <Image
@@ -309,7 +302,7 @@ export default function Home() {
               </h2>
               <p className="shrink-0 text-sm text-zinc-500">{openLeads.length} vermeldingen</p>
             </div>
-            <div className="h-80 overflow-y-auto pr-2 flex flex-col gap-3">
+            <div className="flex h-80 min-h-0 flex-col gap-3 overflow-y-auto pr-2 xl:h-auto xl:flex-1">
               {isLoading ? (
                 <div className="py-8 text-center text-base text-zinc-500">Laden...</div>
               ) : openLeads.length === 0 ? (
@@ -332,51 +325,6 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-base font-semibold text-zinc-800">Top onderwerpen</h2>
-            <div className="h-80">
-              {hasMounted ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={metrics.topicSeries}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="topic" tick={{ fontSize: 13 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 13 }} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#0284c7" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : null}
-            </div>
-          </div>
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-base font-semibold text-zinc-800">Top intenties</h2>
-            <div className="h-80">
-              {hasMounted ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={metrics.intentSeries}
-                      dataKey="count"
-                      nameKey="intent"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={110}
-                      label={(props) =>
-                        typeof props.name === "string" ? props.name.replace(/_/g, " ") : props.name
-                      }
-                    >
-                      {metrics.intentSeries.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [value, "Aantal"]} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : null}
-            </div>
-          </div>
-        </section>
 
       </main>
 

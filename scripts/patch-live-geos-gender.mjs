@@ -1,15 +1,17 @@
 import fs from "fs";
 import path from "path";
 
-const WORKFLOW_DETAILS = process.argv[2];
-if (!WORKFLOW_DETAILS) {
-  console.error("Usage: node patch-live-geos-gender.mjs <workflow-details.json>");
+const workflowPath = process.argv[2];
+const writeInPlace = process.argv.includes("--write");
+if (!workflowPath) {
+  console.error("Usage: node patch-live-geos-gender.mjs <workflow.json> [--write]");
   process.exit(1);
 }
 
-const raw = fs.readFileSync(WORKFLOW_DETAILS, "utf8");
+let raw = fs.readFileSync(workflowPath, "utf8");
+if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1);
 const data = JSON.parse(raw);
-const nodes = data.workflow?.activeVersion?.nodes ?? data.workflow?.nodes ?? [];
+const nodes = data.workflow?.activeVersion?.nodes ?? data.workflow?.nodes ?? data.nodes ?? [];
 
 const GENDER_ATTR = {
   name: "contact_gender",
@@ -131,10 +133,15 @@ for (const node of nodes) {
   }
 }
 
-const outPath = path.join(
-  path.dirname(WORKFLOW_DETAILS),
-  "live-geos-gender-patched-nodes.json",
-);
-fs.writeFileSync(outPath, JSON.stringify({ nodes, changed }, null, 2));
+if (writeInPlace) {
+  if (data.workflow?.activeVersion?.nodes) data.workflow.activeVersion.nodes = nodes;
+  else if (data.workflow?.nodes) data.workflow.nodes = nodes;
+  else data.nodes = nodes;
+  fs.writeFileSync(workflowPath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  console.log("updated:", workflowPath);
+} else {
+  const outPath = path.join(path.dirname(workflowPath), "live-geos-gender-patched-nodes.json");
+  fs.writeFileSync(outPath, JSON.stringify({ nodes, changed }, null, 2));
+  console.log("wrote:", outPath);
+}
 console.log("changed nodes:", changed);
-console.log("wrote:", outPath);
