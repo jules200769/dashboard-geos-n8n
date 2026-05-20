@@ -459,12 +459,6 @@ export function LeadDetailDrawer({
                       />
                     </div>
                   </label>
-                  {usesExistingAccount && (
-                    <IndustrySelect
-                      value={draft.industry}
-                      onChange={(val) => update("industry", val)}
-                    />
-                  )}
                   <label className="space-y-1.5">
                     <span className="text-xs font-medium text-zinc-900">Aanbevolen actie / Contact description</span>
                     <textarea
