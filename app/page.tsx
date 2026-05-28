@@ -209,7 +209,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <Link
               href="/geschiedenis"
-              className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-base font-medium text-zinc-700 hover:bg-zinc-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#F7941D] px-5 py-2.5 text-base font-medium text-white shadow-sm transition-colors hover:bg-[#E5831A]"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M3 3v5h5" />
