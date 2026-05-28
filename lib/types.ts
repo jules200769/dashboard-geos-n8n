@@ -70,6 +70,10 @@ export interface LeadRecord {
   account_description: string;
   lead_rating: "Hot" | "Warm" | "Cold";
   status: LeadStatus;
+  /** Salesforce Account Id returned by the save/update webhook; lets us update instead of duplicate. */
+  salesforce_account_id: string;
+  /** Salesforce Contact Id returned by the save/update webhook. */
+  salesforce_contact_id: string;
   save_payload: Record<string, unknown>;
   raw_payload: Record<string, unknown>;
   created_at: string;

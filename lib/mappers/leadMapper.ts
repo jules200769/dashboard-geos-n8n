@@ -180,13 +180,29 @@ export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
     ),
     lead_rating: inferLeadRating(sentiment, urgency),
     status: "open",
+    salesforce_account_id: "",
+    salesforce_contact_id: "",
     raw_payload: payload,
   };
 }
 
-export function mapLeadForSave(lead: LeadRecord): Record<string, unknown> {
+export type SaveMode = "create" | "update";
+
+/**
+ * Build the payload sent to the n8n save/update webhook.
+ *
+ * `saveMode` tells n8n whether to create new Salesforce records or update the
+ * existing ones referenced by `salesforce_account_id` / `salesforce_contact_id`.
+ */
+export function mapLeadForSave(
+  lead: LeadRecord,
+  saveMode: SaveMode = "create",
+): Record<string, unknown> {
   return {
     id: lead.id,
+    save_mode: saveMode,
+    salesforce_account_id: lead.salesforce_account_id ?? "",
+    salesforce_contact_id: lead.salesforce_contact_id ?? "",
     contact_name: lead.contact_name,
     contact_gender: lead.contact_gender ?? "",
     org_name: lead.org_name,
@@ -210,6 +226,7 @@ export function mapLeadForSave(lead: LeadRecord): Record<string, unknown> {
     account_number: lead.account_number,
     account_description: lead.account_description,
     contact: {
+      salesforce_id: lead.salesforce_contact_id ?? "",
       full_name: lead.contact_name,
       gender: lead.contact_gender ?? "",
       email: lead.sender_email,
@@ -219,6 +236,7 @@ export function mapLeadForSave(lead: LeadRecord): Record<string, unknown> {
       description: lead.suggested_action,
     },
     account: {
+      salesforce_id: lead.salesforce_account_id || lead.matched_account_id,
       id: lead.matched_account_id,
       name: lead.account_name || lead.matched_account_name || lead.org_name,
       number: lead.account_number,

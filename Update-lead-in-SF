@@ -1,0 +1,202 @@
+{
+  "name": "Update Salesforce from Dashboard",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "geos-update-sf",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "18d7a723-3216-492a-b068-b4aa853f78b3",
+      "name": "Dashboard Update Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [240, 400],
+      "webhookId": "aaee251d-14ee-4351-9317-37fe43ba168c"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = ($input.first().json && $input.first().json.body) ? $input.first().json.body : ($input.first().json || {});\nconst account = body.account && typeof body.account === 'object' ? body.account : {};\nconst contact = body.contact && typeof body.contact === 'object' ? body.contact : {};\n\nconst fullName = String(contact.full_name || body.contact_name || '').trim();\nconst nameParts = fullName.split(/\\s+/).filter(Boolean);\nconst firstName = nameParts.length > 1 ? nameParts[0] : '';\nlet lastName = 'Unknown';\nif (nameParts.length > 1) { lastName = nameParts.slice(1).join(' '); } else if (nameParts.length === 1) { lastName = nameParts[0]; }\n\nconst phoneCountry = String(contact.phone_country_code || '').trim();\nconst phoneLocal = String(contact.phone_number || '').trim();\nconst phoneCombined = (phoneCountry && phoneLocal) ? (phoneCountry + ' ' + phoneLocal) : (phoneLocal || phoneCountry);\n\nconst contactId = String(contact.salesforce_id || body.salesforce_contact_id || '').trim();\nconst accountId = String(account.salesforce_id || account.id || body.salesforce_account_id || body.matched_account_id || '').trim();\n\nconst rawGender = String(contact.gender || body.contact_gender || '').trim().toLowerCase();\nconst salutation = rawGender === 'man' ? 'Mr.' : (rawGender === 'vrouw' ? 'Ms.' : '');\n\nreturn [{ json: {\n  leadId: String(body.id || ''),\n  hasAccountId: Boolean(accountId),\n  hasContactId: Boolean(contactId),\n  contactId: contactId,\n  accountId: accountId,\n  accountName: String(account.name || body.account_name || body.org_name || '').trim(),\n  website: String(account.website || body.matched_account_website || '').trim(),\n  accountNumber: String(account.number || body.account_number || '').trim(),\n  accountDescription: String(account.description || body.account_description || '').trim(),\n  industry: String(body.industry || account.industry || '').trim(),\n  firstName: firstName,\n  lastName: lastName,\n  email: String(contact.email || body.sender_email || '').trim(),\n  phone: phoneCombined,\n  contactDescription: String(contact.description || body.suggested_action || '').trim(),\n  contactTitle: String(contact.title || body.contact_title || '').trim(),\n  salutation: salutation\n}}];"
+      },
+      "id": "b82a5f78-3eb7-4240-aa39-dd3f617b148c",
+      "name": "Parse Update Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "has-account",
+              "leftValue": "={{ $json.hasAccountId }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2f346702-11e9-494d-9b9b-2640c9a60851",
+      "name": "Has Account To Update?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "resource": "account",
+        "operation": "update",
+        "accountId": "={{ $json.accountId }}",
+        "updateFields": {
+          "name": "={{ $json.accountName }}",
+          "website": "={{ $json.website }}",
+          "description": "={{ $json.accountDescription }}",
+          "industry": "={{ $json.industry }}",
+          "accountNumber": "={{ $json.accountNumber }}",
+          "phone": "={{ $json.phone }}"
+        }
+      },
+      "id": "8f006abe-8403-410d-8acf-59df3e4a6ecf",
+      "name": "SF Update Account",
+      "type": "n8n-nodes-base.salesforce",
+      "typeVersion": 1,
+      "position": [900, 304],
+      "alwaysOutputData": true,
+      "credentials": {
+        "salesforceOAuth2Api": {
+          "id": "2d8FqMjpBnJ1R6x0",
+          "name": "Salesforce account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = $('Parse Update Payload').first().json || {};\nreturn [{ json: Object.assign({}, parsed, { accountUpdated: true }) }];"
+      },
+      "id": "68e12ef2-bb53-4e76-9863-0d9e5532ba0b",
+      "name": "Account Updated",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 304]
+    },
+    {
+      "parameters": {},
+      "id": "d49d8a82-7cc6-49f4-b858-12c81b5db62d",
+      "name": "Merge Branches",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = $('Parse Update Payload').first().json || {};\nreturn [{ json: Object.assign({}, parsed, { accountUpdated: false }) }];"
+      },
+      "id": "14c32ef3-1d6a-4150-a79d-0d8cc31d61e7",
+      "name": "No Account To Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 496]
+    },
+    {
+      "parameters": {
+        "resource": "contact",
+        "operation": "update",
+        "contactId": "={{ $json.contactId }}",
+        "updateFields": {
+          "firstName": "={{ $json.firstName }}",
+          "lastName": "={{ $json.lastName }}",
+          "email": "={{ $json.email }}",
+          "phone": "={{ $json.phone }}",
+          "title": "={{ $json.contactTitle }}",
+          "description": "={{ $json.contactDescription }}",
+          "salutation": "={{ $json.salutation }}"
+        }
+      },
+      "id": "57da7fa6-35c2-4c9c-b0af-956db494b74c",
+      "name": "SF Update Contact",
+      "type": "n8n-nodes-base.salesforce",
+      "typeVersion": 1,
+      "position": [1560, 400],
+      "alwaysOutputData": true,
+      "credentials": {
+        "salesforceOAuth2Api": {
+          "id": "2d8FqMjpBnJ1R6x0",
+          "name": "Salesforce account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const contactResult = $input.first().json || {};\nconst parsed = $('Parse Update Payload').first().json || {};\nreturn [{ json: {\n  ok: contactResult.success !== false,\n  mode: 'update',\n  salesforce_account_id: String(parsed.accountId || ''),\n  salesforce_contact_id: String(parsed.contactId || ''),\n  leadId: String(parsed.leadId || ''),\n  saved_at: new Date().toISOString()\n}}];"
+      },
+      "id": "df6a758b-45b9-4b30-bba8-ff0cb8a53e62",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "ba2daf25-b307-440f-8161-81dbd1574485",
+      "name": "Respond to Dashboard",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [2000, 400]
+    }
+  ],
+  "connections": {
+    "Dashboard Update Webhook": {
+      "main": [[{ "node": "Parse Update Payload", "type": "main", "index": 0 }]]
+    },
+    "Parse Update Payload": {
+      "main": [[{ "node": "Has Account To Update?", "type": "main", "index": 0 }]]
+    },
+    "Has Account To Update?": {
+      "main": [
+        [{ "node": "SF Update Account", "type": "main", "index": 0 }],
+        [{ "node": "No Account To Update", "type": "main", "index": 0 }]
+      ]
+    },
+    "SF Update Account": {
+      "main": [[{ "node": "Account Updated", "type": "main", "index": 0 }]]
+    },
+    "Account Updated": {
+      "main": [[{ "node": "Merge Branches", "type": "main", "index": 0 }]]
+    },
+    "Merge Branches": {
+      "main": [[{ "node": "SF Update Contact", "type": "main", "index": 0 }]]
+    },
+    "No Account To Update": {
+      "main": [[{ "node": "Merge Branches", "type": "main", "index": 1 }]]
+    },
+    "SF Update Contact": {
+      "main": [[{ "node": "Build Response", "type": "main", "index": 0 }]]
+    },
+    "Build Response": {
+      "main": [[{ "node": "Respond to Dashboard", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  }
+}

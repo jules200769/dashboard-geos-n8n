@@ -35,6 +35,8 @@ create table if not exists public.lead_queue (
   account_description text not null default '',
   lead_rating text not null default 'Warm',
   status text not null default 'open' check (status in ('open', 'saved')),
+  salesforce_account_id text not null default '',
+  salesforce_contact_id text not null default '',
   save_payload jsonb not null default '{}'::jsonb,
   email_body text not null default '',
   raw_payload jsonb not null default '{}'::jsonb,
@@ -60,6 +62,8 @@ alter table public.lead_queue add column if not exists matched_account_candidate
 alter table public.lead_queue add column if not exists contact_gender text not null default '';
 alter table public.lead_queue drop constraint if exists lead_queue_contact_gender_check;
 alter table public.lead_queue add constraint lead_queue_contact_gender_check check (contact_gender in ('', 'man', 'vrouw'));
+alter table public.lead_queue add column if not exists salesforce_account_id text not null default '';
+alter table public.lead_queue add column if not exists salesforce_contact_id text not null default '';
 
 create or replace function public.set_updated_at()
 returns trigger

@@ -43,6 +43,8 @@ function getMockStore(): LeadRecord[] {
       account_name: "",
       account_number: "",
       account_description: "",
+      salesforce_account_id: "",
+      salesforce_contact_id: "",
       save_payload: {},
       raw_payload: {},
     };
@@ -183,6 +185,8 @@ export async function upsertLead(lead: Partial<LeadRecord>): Promise<LeadRecord>
         account_name: lead.account_name ?? lead.org_name ?? "",
         account_number: lead.account_number ?? "",
         account_description: lead.account_description ?? "",
+        salesforce_account_id: lead.salesforce_account_id ?? "",
+        salesforce_contact_id: lead.salesforce_contact_id ?? "",
         lead_rating: lead.lead_rating ?? "Warm",
         status: lead.status ?? "open",
         save_payload: lead.save_payload ?? {},
@@ -253,6 +257,7 @@ export async function markLeadSaved(
   id: string,
   savePayload: Record<string, unknown>,
   draft?: Partial<LeadRecord>,
+  salesforceIds?: { accountId?: string; contactId?: string },
 ): Promise<LeadRecord> {
   if (envFlag("MOCK_LEADS")) {
     const store = getMockStore();
@@ -263,7 +268,9 @@ export async function markLeadSaved(
       ...store[idx],
       ...draftFieldsForSave(draft),
       status: "saved",
-      saved_at: now,
+      saved_at: store[idx].saved_at ?? now,
+      salesforce_account_id: salesforceIds?.accountId || store[idx].salesforce_account_id,
+      salesforce_contact_id: salesforceIds?.contactId || store[idx].salesforce_contact_id,
       save_payload: savePayload,
       updated_at: now,
     };
@@ -271,14 +278,20 @@ export async function markLeadSaved(
     return updated;
   }
   const supabase = supabaseServerClient();
+  const existing = await getLeadById(id);
+  const update: Partial<LeadRecord> = {
+    ...draftFieldsForSave(draft),
+    status: "saved",
+    save_payload: savePayload,
+  };
+  // Preserve the original saved_at on re-saves (corrections); only set it once.
+  if (!existing?.saved_at) update.saved_at = new Date().toISOString();
+  if (salesforceIds?.accountId) update.salesforce_account_id = salesforceIds.accountId;
+  if (salesforceIds?.contactId) update.salesforce_contact_id = salesforceIds.contactId;
+
   const { data, error } = await supabase
     .from(TABLE)
-    .update({
-      ...draftFieldsForSave(draft),
-      status: "saved",
-      saved_at: new Date().toISOString(),
-      save_payload: savePayload,
-    })
+    .update(update)
     .eq("id", id)
     .select("*")
     .single();

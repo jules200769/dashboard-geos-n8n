@@ -144,6 +144,11 @@ interface LeadDetailDrawerProps {
   onChange: (next: LeadRecord) => void;
   onSave: (lead: LeadRecord) => void;
   isSaving: boolean;
+  /**
+   * "review" = first save from the open queue (create in Salesforce).
+   * "edit" = correcting an already-saved card from the history (update in Salesforce).
+   */
+  mode?: "review" | "edit";
 }
 
 type ReviewStep = "account" | "contact";
@@ -165,7 +170,9 @@ export function LeadDetailDrawer({
   onChange,
   onSave,
   isSaving,
+  mode = "review",
 }: LeadDetailDrawerProps) {
+  const isEditMode = mode === "edit";
   const [draft, setDraft] = useState<LeadRecord | null>(lead);
   const [step, setStep] = useState<ReviewStep>(getInitialStep(lead));
   const [isClosing, setIsClosing] = useState(false);
@@ -245,9 +252,25 @@ export function LeadDetailDrawer({
       >
         {/* Header */}
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200/70 bg-gradient-to-b from-zinc-50/90 to-white/80 px-6 py-5 backdrop-blur-sm">
-          <div className="min-w-0 space-y-0.5">
-            <h2 className="text-xl font-semibold tracking-tight text-zinc-900">Leadreview</h2>
-            <p className="text-sm leading-snug text-zinc-500">{accountModeLabel(draft.salesforce_mode)}</p>
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl font-semibold tracking-tight text-zinc-900">
+                {isEditMode ? "Kaart corrigeren" : "Leadreview"}
+              </h2>
+              {isEditMode ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200/70">
+                  <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Bewerken
+                </span>
+              ) : null}
+            </div>
+            <p className="text-sm leading-snug text-zinc-500">
+              {isEditMode
+                ? "Wijzigingen worden bijgewerkt in het bestaande Salesforce-record."
+                : accountModeLabel(draft.salesforce_mode)}
+            </p>
           </div>
           <button
             type="button"
@@ -470,7 +493,7 @@ export function LeadDetailDrawer({
                 </div>
               )}
 
-              {step === "account" && !usesExistingAccount ? (
+              {!isEditMode && step === "account" && !usesExistingAccount ? (
                 <button
                   type="button"
                   onClick={() => setStep("contact")}
@@ -482,10 +505,10 @@ export function LeadDetailDrawer({
                 <button
                   type="button"
                   onClick={() => onSave(draft)}
-                  disabled={isSaving || draft.status === "saved"}
+                  disabled={isSaving || (!isEditMode && draft.status === "saved")}
                   className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-zinc-900 px-4 py-3.5 text-sm font-semibold text-white shadow-[0_4px_14px_-4px_rgba(0,0,0,0.45)] transition-all duration-150 ease-out active:scale-[0.99] active:shadow-md disabled:cursor-not-allowed disabled:bg-zinc-400 disabled:shadow-none disabled:active:scale-100"
                 >
-                  {draft.status === "saved" ? (
+                  {!isEditMode && draft.status === "saved" ? (
                     <>
                       <span>Opgeslagen in</span>
                       <Image
@@ -497,10 +520,16 @@ export function LeadDetailDrawer({
                       />
                     </>
                   ) : isSaving ? (
-                    "Bezig met opslaan..."
+                    isEditMode ? "Bezig met bijwerken..." : "Bezig met opslaan..."
                   ) : (
                     <>
-                      <span>{usesExistingAccount ? "Opslaan als contact in" : "Opslaan in"}</span>
+                      <span>
+                        {isEditMode
+                          ? "Wijzigingen bijwerken in"
+                          : usesExistingAccount
+                            ? "Opslaan als contact in"
+                            : "Opslaan in"}
+                      </span>
                       <Image
                         src="/salesforce-logo.png"
                         alt="Salesforce"

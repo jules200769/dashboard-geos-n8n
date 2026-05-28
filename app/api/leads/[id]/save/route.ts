@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLeadById, markLeadSaved } from "@/lib/data/leadRepository";
-import { mapLeadForSave } from "@/lib/mappers/leadMapper";
+import { mapLeadForSave, type SaveMode } from "@/lib/mappers/leadMapper";
 import type { LeadRecord } from "@/lib/types";
 
 interface RouteContext {
@@ -12,6 +12,32 @@ function asDraft(value: unknown): Partial<LeadRecord> {
   const payload = value as { lead?: unknown };
   if (!payload.lead || typeof payload.lead !== "object" || Array.isArray(payload.lead)) return {};
   return payload.lead as Partial<LeadRecord>;
+}
+
+/** Read a string field from the (possibly array-wrapped) n8n webhook response. */
+function pickString(source: Record<string, unknown>, ...keys: string[]): string {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number") return String(value);
+  }
+  return "";
+}
+
+/** Extract the Salesforce Ids that n8n returns so we can update instead of duplicate next time. */
+function parseWebhookIds(body?: string): { accountId: string; contactId: string } {
+  if (!body) return { accountId: "", contactId: "" };
+  try {
+    const parsed = JSON.parse(body);
+    const record = (Array.isArray(parsed) ? parsed[0] : parsed) as Record<string, unknown> | null;
+    if (!record || typeof record !== "object") return { accountId: "", contactId: "" };
+    return {
+      accountId: pickString(record, "salesforce_account_id", "accountId", "account_id"),
+      contactId: pickString(record, "salesforce_contact_id", "contactId", "contact_id"),
+    };
+  } catch {
+    return { accountId: "", contactId: "" };
+  }
 }
 
 export async function POST(request: NextRequest, context: RouteContext) {
@@ -39,8 +65,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
       },
     };
 
-    const savePayload = mapLeadForSave(leadForSave);
-    const webhookUrl = process.env.N8N_SAVE_WEBHOOK_URL;
+    // A correction of an already-saved card updates the existing Salesforce record.
+    const isUpdate = Boolean(lead.salesforce_contact_id) || lead.status === "saved";
+    const saveMode: SaveMode = isUpdate ? "update" : "create";
+
+    const savePayload = mapLeadForSave(leadForSave, saveMode);
+    const webhookUrl = isUpdate
+      ? process.env.N8N_UPDATE_WEBHOOK_URL || process.env.N8N_SAVE_WEBHOOK_URL
+      : process.env.N8N_SAVE_WEBHOOK_URL;
 
     let webhookResult: { ok: boolean; status?: number; body?: string } = { ok: false };
     if (webhookUrl) {
@@ -56,6 +88,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       };
     }
 
+    const returnedIds = parseWebhookIds(webhookResult.body);
     const updated = await markLeadSaved(
       id,
       {
@@ -63,13 +96,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
         webhookStatus: webhookResult,
       },
       leadForSave,
+      {
+        accountId: returnedIds.accountId || lead.salesforce_account_id,
+        contactId: returnedIds.contactId || lead.salesforce_contact_id,
+      },
     );
+
+    const okMessage = isUpdate
+      ? "Correctie opgeslagen en bijgewerkt in Salesforce."
+      : "Lead opgeslagen in dashboard en doorgestuurd.";
 
     return NextResponse.json({
       lead: updated,
       webhook: webhookResult,
+      mode: saveMode,
       message: webhookResult.ok || !webhookUrl
-        ? "Lead opgeslagen in dashboard en doorgestuurd."
+        ? okMessage
         : "Lead opgeslagen, maar webhook gaf een foutstatus.",
     });
   } catch (error) {

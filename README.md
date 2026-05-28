@@ -92,9 +92,19 @@ Optioneel beveiligd met header als je `N8N_WEBHOOK_SECRET` gebruikt:
 ### Save endpoint (dashboard -> n8n)
 `POST /api/leads/:id/save`
 
-De route zet status op `saved` in Supabase en forwardt payload naar:
+De route zet status op `saved` in Supabase en forwardt payload naar `N8N_SAVE_WEBHOOK_URL`.
 
-`N8N_SAVE_WEBHOOK_URL`
+De n8n-respons mag de aangemaakte Salesforce-ID's teruggeven (`salesforce_account_id`,
+`salesforce_contact_id`); die slaat het dashboard op zodat een latere correctie het juiste
+record bijwerkt in plaats van een duplicaat te maken.
+
+### Correctie / update (geschiedenis)
+Een opgeslagen kaart kun je via `/geschiedenis` opnieuw openen en corrigeren. Bij opnieuw
+opslaan stuurt dezelfde save-route de payload met `save_mode: "update"` plus de bewaarde
+`salesforce_account_id` / `salesforce_contact_id`.
+
+- Als `N8N_UPDATE_WEBHOOK_URL` is ingesteld, gaat de update naar die (aparte) workflow.
+- Anders valt de update terug op `N8N_SAVE_WEBHOOK_URL` (die zelf op `save_mode` kan splitsen).
 
 ## 5) Vercel deploy
 
@@ -106,6 +116,7 @@ De route zet status op `saved` in Supabase en forwardt payload naar:
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `N8N_SAVE_WEBHOOK_URL`
+   - `N8N_UPDATE_WEBHOOK_URL` (optioneel — voor correcties/updates)
    - `N8N_WEBHOOK_SECRET` (optioneel)
 4. Deploy.
 
