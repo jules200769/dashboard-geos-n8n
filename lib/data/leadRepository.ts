@@ -118,6 +118,28 @@ function getMockStore(): LeadRecord[] {
   return mockLeadsStore;
 }
 
+/** Ensure rows from Supabase always expose the fields the UI/API expect. */
+function normalizeLeadRecord(row: Record<string, unknown>): LeadRecord {
+  const base = row as unknown as LeadRecord;
+  return {
+    ...base,
+    salesforce_account_id: String(row.salesforce_account_id ?? ""),
+    salesforce_contact_id: String(row.salesforce_contact_id ?? ""),
+    matched_account_candidates: Array.isArray(row.matched_account_candidates)
+      ? (row.matched_account_candidates as LeadRecord["matched_account_candidates"])
+      : [],
+  };
+}
+
+function isMissingSalesforceColumnError(error: { message?: string; code?: string }): boolean {
+  const message = (error.message ?? "").toLowerCase();
+  return (
+    message.includes("salesforce_account_id") ||
+    message.includes("salesforce_contact_id") ||
+    (error.code === "PGRST204" && message.includes("column"))
+  );
+}
+
 export async function getLeads(): Promise<LeadRecord[]> {
   if (envFlag("MOCK_LEADS")) {
     return getMockStore().slice().sort((a, b) => b.created_at.localeCompare(a.created_at));
@@ -129,7 +151,7 @@ export async function getLeads(): Promise<LeadRecord[]> {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return (data ?? []) as LeadRecord[];
+  return (data ?? []).map((row) => normalizeLeadRecord(row as Record<string, unknown>));
 }
 
 export async function getLeadById(id: string): Promise<LeadRecord | null> {
@@ -139,7 +161,7 @@ export async function getLeadById(id: string): Promise<LeadRecord | null> {
   const supabase = supabaseServerClient();
   const { data, error } = await supabase.from(TABLE).select("*").eq("id", id).maybeSingle();
   if (error) throw error;
-  return (data as LeadRecord | null) ?? null;
+  return data ? normalizeLeadRecord(data as Record<string, unknown>) : null;
 }
 
 export async function upsertLead(lead: Partial<LeadRecord>): Promise<LeadRecord> {
@@ -289,14 +311,26 @@ export async function markLeadSaved(
   if (salesforceIds?.accountId) update.salesforce_account_id = salesforceIds.accountId;
   if (salesforceIds?.contactId) update.salesforce_contact_id = salesforceIds.contactId;
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from(TABLE)
     .update(update)
     .eq("id", id)
     .select("*")
     .single();
+
+  if (error && isMissingSalesforceColumnError(error)) {
+    delete update.salesforce_account_id;
+    delete update.salesforce_contact_id;
+    ({ data, error } = await supabase
+      .from(TABLE)
+      .update(update)
+      .eq("id", id)
+      .select("*")
+      .single());
+  }
+
   if (error) throw error;
-  return data as LeadRecord;
+  return normalizeLeadRecord(data as Record<string, unknown>);
 }
 
 export async function markLeadRechecked(

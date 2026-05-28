@@ -8,6 +8,7 @@ interface LeadsApiResponse {
 /** Bekende Engelstalige API-fouten vertalen voor de UI (geen backend-wijziging). */
 const API_ERROR_NL: Record<string, string> = {
   "Save failed": "Opslaan mislukt.",
+  "Salesforce bijwerken mislukt.": "Salesforce bijwerken mislukt.",
   "Lead not found": "Lead niet gevonden.",
   "Failed to load leads": "Leads laden mislukt.",
   "Re-check failed": "Salesforce-controle mislukt.",
@@ -55,7 +56,9 @@ export async function saveLead(id: string, lead: LeadRecord): Promise<{ message:
   const payload = await response.json();
   if (!response.ok) {
     const raw = typeof payload.error === "string" ? payload.error : "Opslaan mislukt.";
-    throw new Error(translateApiError(raw));
+    const detail = typeof payload.detail === "string" ? payload.detail : "";
+    const message = detail ? `${translateApiError(raw)} ${detail}` : translateApiError(raw);
+    throw new Error(message);
   }
   return payload;
 }

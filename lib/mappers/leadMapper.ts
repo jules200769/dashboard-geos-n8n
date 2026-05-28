@@ -188,6 +188,72 @@ export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
 
 export type SaveMode = "create" | "update";
 
+function pickStringField(source: Record<string, unknown>, ...keys: string[]): string {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number") return String(value);
+  }
+  return "";
+}
+
+/** Parse Salesforce IDs from an n8n webhook JSON body (string or object). */
+export function parseSalesforceIdsFromWebhookBody(body?: string): { accountId: string; contactId: string } {
+  if (!body?.trim()) return { accountId: "", contactId: "" };
+  try {
+    const parsed = JSON.parse(body);
+    const record = (Array.isArray(parsed) ? parsed[0] : parsed) as Record<string, unknown> | null;
+    if (!record || typeof record !== "object") return { accountId: "", contactId: "" };
+    return {
+      accountId: pickStringField(record, "salesforce_account_id", "accountId", "account_id"),
+      contactId: pickStringField(record, "salesforce_contact_id", "contactId", "contact_id"),
+    };
+  } catch {
+    return { accountId: "", contactId: "" };
+  }
+}
+
+/**
+ * Resolve Salesforce Account/Contact IDs for update flows.
+ * Falls back to IDs stored in save_payload when DB columns are empty (older saved cards).
+ */
+export function resolveSalesforceIds(lead: LeadRecord): { accountId: string; contactId: string } {
+  let accountId = String(lead.salesforce_account_id ?? "").trim();
+  let contactId = String(lead.salesforce_contact_id ?? "").trim();
+
+  const payload = lead.save_payload;
+  if ((!contactId || !accountId) && payload && typeof payload === "object") {
+    const record = payload as Record<string, unknown>;
+    accountId = accountId || pickStringField(record, "salesforce_account_id", "accountId");
+    contactId = contactId || pickStringField(record, "salesforce_contact_id", "contactId");
+
+    const webhookStatus = record.webhookStatus;
+    if (webhookStatus && typeof webhookStatus === "object") {
+      const body = (webhookStatus as Record<string, unknown>).body;
+      if (typeof body === "string") {
+        const fromWebhook = parseSalesforceIdsFromWebhookBody(body);
+        accountId = accountId || fromWebhook.accountId;
+        contactId = contactId || fromWebhook.contactId;
+      }
+    }
+
+    const account = record.account;
+    if (account && typeof account === "object") {
+      accountId = accountId || pickStringField(account as Record<string, unknown>, "salesforce_id", "id");
+    }
+    const contact = record.contact;
+    if (contact && typeof contact === "object") {
+      contactId = contactId || pickStringField(contact as Record<string, unknown>, "salesforce_id", "id");
+    }
+  }
+
+  if (!accountId) {
+    accountId = String(lead.matched_account_id ?? "").trim();
+  }
+
+  return { accountId, contactId };
+}
+
 /**
  * Build the payload sent to the n8n save/update webhook.
  *
