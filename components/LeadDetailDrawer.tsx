@@ -288,9 +288,9 @@ export function LeadDetailDrawer({
         </div>
 
         {/* Two-column body */}
-        <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           {/* Left column — Original email */}
-          <div className="flex w-1/2 flex-col border-r border-zinc-200/60 bg-zinc-50/40">
+          <div className="flex max-h-[40%] w-full flex-col border-b border-zinc-200/60 bg-zinc-50/40 lg:max-h-none lg:w-1/2 lg:border-b-0 lg:border-r">
             <div className="shrink-0 border-b border-zinc-200/50 bg-zinc-100/30 px-6 py-3.5">
               <h3 className="flex flex-wrap items-center gap-2.5 text-[13px] font-semibold tracking-wide text-zinc-700">
                 <span>Bronmail</span>
@@ -332,7 +332,7 @@ export function LeadDetailDrawer({
           </div>
 
           {/* Right column — Editable fields + context */}
-          <div className="flex w-1/2 flex-col bg-white/50">
+          <div className="flex min-h-0 w-full flex-1 flex-col bg-white/50 lg:w-1/2 lg:flex-none">
             <div className="shrink-0 border-b border-zinc-200/50 bg-white/60 px-6 py-3.5 backdrop-blur-sm">
               <h3 className="text-[13px] font-semibold tracking-wide text-zinc-700">
                 {canGoToContact ? "Contactgegevens" : "Accountgegevens"}

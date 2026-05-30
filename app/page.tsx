@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
 import {
   CartesianGrid,
   Legend,
@@ -15,7 +15,10 @@ import {
 } from "recharts";
 import { LeadCard } from "@/components/LeadCard";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
+import { DashboardHeader } from "@/components/DashboardHeader";
+import { FeedbackToast } from "@/components/FeedbackToast";
 import { fetchLeads, ignoreLead, recheckLead, saveLead } from "@/lib/api";
+import { useCountUp } from "@/lib/useCountUp";
 import type { LeadRecord, MetricsResponse } from "@/lib/types";
 
 const emptyMetrics: MetricsResponse = {
@@ -44,6 +47,10 @@ function KpiTile({
         ? { src: "/gmail-logo.png" as const, alt: "Gmail" }
         : null;
 
+  const numericValue = typeof value === "number" ? value : 0;
+  const counted = useCountUp(numericValue);
+  const displayValue = typeof value === "number" ? counted : value;
+
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
       <p
@@ -64,7 +71,7 @@ function KpiTile({
           title
         )}
       </p>
-      <p className="mt-2 text-4xl font-semibold text-zinc-900">{value}</p>
+      <p className="mt-2 text-4xl font-semibold text-zinc-900 tabular-nums">{displayValue}</p>
     </div>
   );
 }
@@ -183,96 +190,28 @@ export default function Home() {
   return (
     <div className="flex min-h-dvh flex-col bg-zinc-100 text-zinc-900 xl:min-h-0 xl:flex-1 xl:overflow-hidden">
       <main className="mx-auto flex w-full max-w-[1600px] flex-col px-6 py-4 pb-8 md:px-12 md:py-5 xl:flex-1 xl:min-h-0 xl:overflow-hidden xl:pb-5">
-        <header className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="shrink-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-              aria-label="Ga naar dashboard home"
-            >
-              <Image
-                src="/logo-geos.png"
-                alt="GEOS Laboratories"
-                width={160}
-                height={40}
-                className="h-10 w-auto"
-                priority
-              />
-            </Link>
-            <div>
-              <h1 className="text-3xl font-semibold text-zinc-900">Salesforce-dashboard</h1>
-              <p className="text-base text-zinc-600">
-                Inbox van leads die niet in Salesforce gevonden zijn.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/geschiedenis"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#F7941D] px-5 py-2.5 text-base font-medium text-white shadow-sm transition-colors hover:bg-[#E5831A]"
-            >
+        <DashboardHeader
+          title="Salesforce-dashboard"
+          subtitle="Inbox van leads die niet in Salesforce gevonden zijn."
+          navLink={{
+            href: "/geschiedenis",
+            label: "Geschiedenis",
+            variant: "primary",
+            icon: (
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M3 3v5h5" />
                 <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
                 <path d="M12 7v5l4 2" />
               </svg>
-              Geschiedenis
-            </Link>
-            <button
-              type="button"
-              onClick={loadDashboard}
-              className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-base font-medium text-zinc-700 hover:bg-zinc-50"
-            >
-              Vernieuwen
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                await fetch("/api/auth/logout", { method: "POST" });
-                window.location.href = "/login";
-              }}
-              className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-base font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700"
-            >
-              Uitloggen
-            </button>
-          </div>
-        </header>
+            ),
+          }}
+          onRefresh={loadDashboard}
+          isRefreshing={isLoading}
+        />
 
-        {feedback && (
-          <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border bg-white px-5 py-4 text-base shadow-xl transition-all duration-300">
-            {feedback.type === "success" && (
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </div>
-            )}
-            {feedback.type === "error" && (
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </div>
-            )}
-            {feedback.type === "info" && (
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-              </div>
-            )}
-            <div className="font-medium text-zinc-800">{feedback.text}</div>
-            <button onClick={() => setFeedback(null)} className="ml-2 shrink-0 text-zinc-400 hover:text-zinc-600" aria-label="Sluiten">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
-        )}
+        <AnimatePresence>
+          {feedback && <FeedbackToast feedback={feedback} onClose={() => setFeedback(null)} />}
+        </AnimatePresence>
 
         <section className="mb-4 grid shrink-0 grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
           <KpiTile title="Open leads" value={metrics.openLeads} titleLogo="gmail" />
@@ -319,18 +258,31 @@ export default function Home() {
               ) : openLeads.length === 0 ? (
                 <div className="py-8 text-center text-base text-zinc-500">Geen open leads in de wachtrij.</div>
               ) : (
-                openLeads.map((lead) => (
-                  <LeadCard
-                    key={lead.id}
-                    lead={lead}
-                    onOpen={setSelectedLead}
-                    onIgnore={handleIgnore}
-                    onRecheck={handleRecheck}
-                    isSaving={savingId === lead.id}
-                    isIgnoring={ignoringId === lead.id}
-                    isRechecking={recheckingId === lead.id}
-                  />
-                ))
+                <AnimatePresence initial mode="popLayout">
+                  {openLeads.map((lead, index) => (
+                    <motion.div
+                      key={lead.id}
+                      layout
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                        transition: { delay: Math.min(index * 0.04, 0.4), duration: 0.3, ease: "easeOut" },
+                      }}
+                      exit={{ opacity: 0, x: 48, scale: 0.97, transition: { duration: 0.25, ease: "easeIn" } }}
+                    >
+                      <LeadCard
+                        lead={lead}
+                        onOpen={setSelectedLead}
+                        onIgnore={handleIgnore}
+                        onRecheck={handleRecheck}
+                        isSaving={savingId === lead.id}
+                        isIgnoring={ignoringId === lead.id}
+                        isRechecking={recheckingId === lead.id}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               )}
             </div>
           </div>
