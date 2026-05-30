@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLeadById, markLeadRechecked } from "@/lib/data/leadRepository";
+import { getSessionUserId } from "@/lib/auth/currentUser";
+import { resolveN8nWebhooks } from "@/lib/n8n/webhooks";
 import { accountCandidatesFromPayload } from "@/lib/mappers/leadMapper";
 import type { SalesforceAccountCandidate, SalesforceMode } from "@/lib/types";
 
@@ -94,13 +96,17 @@ function normalizeRecheckResult(payload: unknown): RecheckResult {
 
 export async function POST(_request: NextRequest, context: RouteContext) {
   try {
+    const owner = await getSessionUserId();
+    if (!owner) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const { id } = await context.params;
-    const lead = await getLeadById(id);
+    const lead = await getLeadById(id, owner);
     if (!lead) {
       return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     }
 
-    const webhookUrl = process.env.N8N_RECHECK_WEBHOOK_URL;
+    const webhookUrl = resolveN8nWebhooks(owner).recheck;
     if (!webhookUrl) {
       return NextResponse.json({ error: "Re-check webhook not configured" }, { status: 500 });
     }
@@ -110,6 +116,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         leadId: lead.id,
+        owner: lead.owner,
         contact_name: lead.contact_name,
         org_name: lead.org_name,
         sender_email: lead.sender_email,
@@ -156,7 +163,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
           },
         },
       },
-    });
+    }, owner);
 
     return NextResponse.json({
       lead: updated,

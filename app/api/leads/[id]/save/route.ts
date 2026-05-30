@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLeadById, markLeadSaved } from "@/lib/data/leadRepository";
+import { getSessionUserId } from "@/lib/auth/currentUser";
+import { resolveN8nWebhooks } from "@/lib/n8n/webhooks";
 import {
   mapLeadForSave,
   parseSalesforceIdsFromWebhookBody,
@@ -37,8 +39,12 @@ function summarizeWebhookFailure(body?: string, status?: number): string {
 
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
+    const owner = await getSessionUserId();
+    if (!owner) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const { id } = await context.params;
-    const lead = await getLeadById(id);
+    const lead = await getLeadById(id, owner);
     if (!lead) {
       return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     }
@@ -78,13 +84,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const savePayload = mapLeadForSave(leadForSave, saveMode);
-    const webhookUrl = isUpdate
-      ? process.env.N8N_UPDATE_WEBHOOK_URL || process.env.N8N_SAVE_WEBHOOK_URL
-      : process.env.N8N_SAVE_WEBHOOK_URL;
+    const webhooks = resolveN8nWebhooks(owner);
+    const webhookUrl = isUpdate ? webhooks.update || webhooks.save : webhooks.save;
 
-    if (isUpdate && !process.env.N8N_UPDATE_WEBHOOK_URL) {
+    if (isUpdate && !webhooks.update) {
       console.warn(
-        "N8N_UPDATE_WEBHOOK_URL is not set; correction falls back to N8N_SAVE_WEBHOOK_URL (create flow).",
+        `No update webhook configured for owner "${owner}"; correction falls back to the save (create) webhook.`,
       );
     }
 
@@ -125,6 +130,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         accountId: returnedIds.accountId || resolvedIds.accountId,
         contactId: returnedIds.contactId || resolvedIds.contactId,
       },
+      owner,
     );
 
     const okMessage = isUpdate

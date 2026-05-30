@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { mapIncomingPayload, shouldIngestLead } from "@/lib/mappers/leadMapper";
 import { upsertLead } from "@/lib/data/leadRepository";
+import { getDashboardUsers } from "@/lib/auth/dashboardSession";
 
 function isAuthorized(request: NextRequest): boolean {
   const expected = process.env.N8N_WEBHOOK_SECRET;
   if (!expected) return true;
   return request.headers.get("x-webhook-secret") === expected;
+}
+
+/** Warn (but do not drop) when n8n sends an owner that maps to no dashboard user. */
+function warnOnUnknownOwner(owner: string): void {
+  const users = getDashboardUsers();
+  if (users.length === 0) return;
+  if (!users.some((user) => user.id === owner)) {
+    console.warn(
+      `lead-not-found: received owner "${owner}" which matches no configured dashboard user; ` +
+        `the lead will be stored but stay invisible until an owner key matches.`,
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -23,6 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const mapped = mapIncomingPayload(payload);
+    warnOnUnknownOwner(mapped.owner);
     const lead = await upsertLead(mapped);
     return NextResponse.json({ accepted: true, lead });
   } catch (error) {

@@ -37,6 +37,8 @@ export interface SalesforceAccountCandidate {
 export interface LeadRecord {
   id: string;
   source_message_id: string | null;
+  /** Owner key (dashboard user) that produced this lead; used to scope access. */
+  owner: string;
   contact_name: string;
   contact_gender?: ContactGender | "";
   org_name: string;

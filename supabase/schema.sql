@@ -2,7 +2,8 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.lead_queue (
   id uuid primary key default gen_random_uuid(),
-  source_message_id text unique,
+  source_message_id text,
+  owner text not null default '',
   contact_name text not null default '',
   contact_gender text not null default '' check (contact_gender in ('', 'man', 'vrouw')),
   org_name text not null default '',
@@ -50,6 +51,14 @@ create index if not exists lead_queue_created_at_idx on public.lead_queue(create
 create index if not exists lead_queue_sender_email_idx on public.lead_queue(sender_email);
 create index if not exists lead_queue_primary_topic_idx on public.lead_queue(primary_topic);
 create index if not exists lead_queue_intent_idx on public.lead_queue(intent);
+create index if not exists lead_queue_owner_idx on public.lead_queue(owner);
+
+-- Per-owner uniqueness: the same Gmail message id may exist in multiple inboxes.
+alter table public.lead_queue add column if not exists owner text not null default '';
+alter table public.lead_queue drop constraint if exists lead_queue_source_message_id_key;
+drop index if exists public.lead_queue_source_message_id_key;
+create unique index if not exists lead_queue_owner_source_message_id_key
+  on public.lead_queue(owner, source_message_id);
 
 alter table public.lead_queue add column if not exists salesforce_mode text not null default 'create_account_then_contact';
 alter table public.lead_queue add column if not exists matched_account_id text not null default '';

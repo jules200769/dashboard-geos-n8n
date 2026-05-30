@@ -142,6 +142,7 @@ export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
 
   return {
     source_message_id: asString(payload.message_id || payload.id) || null,
+    owner: asString(payload.owner || payload.user_id || payload.userId) || "default",
     contact_name: asString(payload.contact_name),
     contact_gender: toContactGender(payload.contact_gender ?? payload.contactGender ?? payload.gender),
     org_name: asString(payload.org_name || payload.company),
@@ -266,6 +267,7 @@ export function mapLeadForSave(
 ): Record<string, unknown> {
   return {
     id: lead.id,
+    owner: lead.owner ?? "",
     save_mode: saveMode,
     salesforce_account_id: lead.salesforce_account_id ?? "",
     salesforce_contact_id: lead.salesforce_contact_id ?? "",

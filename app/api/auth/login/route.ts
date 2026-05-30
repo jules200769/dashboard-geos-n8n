@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import {
   COOKIE_NAME,
-  getExpectedSessionValue,
+  getSessionValueForUser,
   getSessionCookieOptions,
   isAccessCodeConfigured,
+  resolveUserByCode,
 } from "@/lib/auth/dashboardSession";
-import { verifyAccessCode } from "@/lib/auth/verifyAccessCode";
 
 export async function POST(request: Request) {
   if (!isAccessCodeConfigured()) {
@@ -23,11 +23,12 @@ export async function POST(request: Request) {
   }
 
   const code = typeof body.code === "string" ? body.code : "";
-  if (!verifyAccessCode(code)) {
+  const userId = resolveUserByCode(code);
+  if (!userId) {
     return NextResponse.json({ error: "Ongeldige toegangscode." }, { status: 401 });
   }
 
-  const sessionValue = await getExpectedSessionValue();
+  const sessionValue = await getSessionValueForUser(userId);
   if (!sessionValue) {
     return NextResponse.json(
       { error: "Dashboardtoegang is niet geconfigureerd." },

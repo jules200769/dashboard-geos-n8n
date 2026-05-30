@@ -23,6 +23,7 @@ function getMockStore(): LeadRecord[] {
   const base: Omit<LeadRecord, "id" | "subject" | "email_body" | "contact_name" | "org_name" | "sender_email" | "sender_domain" | "sentiment" | "primary_topic" | "intent" | "urgency_score" | "lead_rating" | "status" | "created_at" | "updated_at" | "saved_at" | "industry"> =
     {
       source_message_id: null,
+      owner: "default",
       phone_country_code: "+31",
       phone_number: "612345678",
       contact_title: "",
@@ -140,26 +141,38 @@ function isMissingSalesforceColumnError(error: { message?: string; code?: string
   );
 }
 
-export async function getLeads(): Promise<LeadRecord[]> {
+export async function getLeads(owner: string): Promise<LeadRecord[]> {
   if (envFlag("MOCK_LEADS")) {
-    return getMockStore().slice().sort((a, b) => b.created_at.localeCompare(a.created_at));
+    return getMockStore()
+      .filter((l) => l.owner === owner)
+      .slice()
+      .sort((a, b) => b.created_at.localeCompare(a.created_at));
   }
   const supabase = supabaseServerClient();
   const { data, error } = await supabase
     .from(TABLE)
     .select("*")
+    .eq("owner", owner)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
   return (data ?? []).map((row) => normalizeLeadRecord(row as Record<string, unknown>));
 }
 
-export async function getLeadById(id: string): Promise<LeadRecord | null> {
+/**
+ * Fetch a lead by id. When `owner` is provided the lookup is scoped to that
+ * owner, so a user can never read another user's lead (returns null instead).
+ */
+export async function getLeadById(id: string, owner?: string): Promise<LeadRecord | null> {
   if (envFlag("MOCK_LEADS")) {
-    return getMockStore().find((l) => l.id === id) ?? null;
+    const found = getMockStore().find((l) => l.id === id) ?? null;
+    if (found && owner !== undefined && found.owner !== owner) return null;
+    return found;
   }
   const supabase = supabaseServerClient();
-  const { data, error } = await supabase.from(TABLE).select("*").eq("id", id).maybeSingle();
+  let query = supabase.from(TABLE).select("*").eq("id", id);
+  if (owner !== undefined) query = query.eq("owner", owner);
+  const { data, error } = await query.maybeSingle();
   if (error) throw error;
   return data ? normalizeLeadRecord(data as Record<string, unknown>) : null;
 }
@@ -178,6 +191,7 @@ export async function upsertLead(lead: Partial<LeadRecord>): Promise<LeadRecord>
       ({
         id,
         source_message_id: lead.source_message_id ?? null,
+        owner: lead.owner ?? "default",
         contact_name: lead.contact_name ?? "Unknown",
         org_name: lead.org_name ?? "Unknown",
         sender_email: lead.sender_email ?? "unknown@example.com",
@@ -230,7 +244,7 @@ export async function upsertLead(lead: Partial<LeadRecord>): Promise<LeadRecord>
     return merged;
   }
   const supabase = supabaseServerClient();
-  const conflictTarget = lead.source_message_id ? "source_message_id" : "id";
+  const conflictTarget = lead.source_message_id ? "owner,source_message_id" : "id";
   const { data, error } = await supabase
     .from(TABLE)
     .upsert(lead, { onConflict: conflictTarget })
@@ -240,14 +254,16 @@ export async function upsertLead(lead: Partial<LeadRecord>): Promise<LeadRecord>
   return data as LeadRecord;
 }
 
-export async function deleteLead(id: string): Promise<void> {
+export async function deleteLead(id: string, owner?: string): Promise<void> {
   if (envFlag("MOCK_LEADS")) {
     const store = getMockStore();
-    mockLeadsStore = store.filter((l) => l.id !== id);
+    mockLeadsStore = store.filter((l) => l.id !== id || (owner !== undefined && l.owner !== owner));
     return;
   }
   const supabase = supabaseServerClient();
-  const { error } = await supabase.from(TABLE).delete().eq("id", id);
+  let query = supabase.from(TABLE).delete().eq("id", id);
+  if (owner !== undefined) query = query.eq("owner", owner);
+  const { error } = await query;
   if (error) throw error;
 }
 
@@ -280,10 +296,11 @@ export async function markLeadSaved(
   savePayload: Record<string, unknown>,
   draft?: Partial<LeadRecord>,
   salesforceIds?: { accountId?: string; contactId?: string },
+  owner?: string,
 ): Promise<LeadRecord> {
   if (envFlag("MOCK_LEADS")) {
     const store = getMockStore();
-    const idx = store.findIndex((l) => l.id === id);
+    const idx = store.findIndex((l) => l.id === id && (owner === undefined || l.owner === owner));
     if (idx < 0) throw new Error("Lead not found");
     const now = new Date().toISOString();
     const updated: LeadRecord = {
@@ -300,7 +317,7 @@ export async function markLeadSaved(
     return updated;
   }
   const supabase = supabaseServerClient();
-  const existing = await getLeadById(id);
+  const existing = await getLeadById(id, owner);
   const update: Partial<LeadRecord> = {
     ...draftFieldsForSave(draft),
     status: "saved",
@@ -311,22 +328,18 @@ export async function markLeadSaved(
   if (salesforceIds?.accountId) update.salesforce_account_id = salesforceIds.accountId;
   if (salesforceIds?.contactId) update.salesforce_contact_id = salesforceIds.contactId;
 
-  let { data, error } = await supabase
-    .from(TABLE)
-    .update(update)
-    .eq("id", id)
-    .select("*")
-    .single();
+  const runUpdate = () => {
+    const base = supabase.from(TABLE).update(update).eq("id", id);
+    const scoped = owner !== undefined ? base.eq("owner", owner) : base;
+    return scoped.select("*").single();
+  };
+
+  let { data, error } = await runUpdate();
 
   if (error && isMissingSalesforceColumnError(error)) {
     delete update.salesforce_account_id;
     delete update.salesforce_contact_id;
-    ({ data, error } = await supabase
-      .from(TABLE)
-      .update(update)
-      .eq("id", id)
-      .select("*")
-      .single());
+    ({ data, error } = await runUpdate());
   }
 
   if (error) throw error;
@@ -349,10 +362,11 @@ export async function markLeadRechecked(
     accountDescription?: string;
     rawPayload: Record<string, unknown>;
   },
+  owner?: string,
 ): Promise<LeadRecord> {
   if (envFlag("MOCK_LEADS")) {
     const store = getMockStore();
-    const idx = store.findIndex((l) => l.id === id);
+    const idx = store.findIndex((l) => l.id === id && (owner === undefined || l.owner === owner));
     if (idx < 0) throw new Error("Lead not found");
     const now = new Date().toISOString();
     const updated: LeadRecord = {
@@ -394,12 +408,9 @@ export async function markLeadRechecked(
   if (result.accountNumber !== undefined) updatePayload.account_number = result.accountNumber;
   if (result.accountDescription !== undefined) updatePayload.account_description = result.accountDescription;
 
-  const { data, error } = await supabase
-    .from(TABLE)
-    .update(updatePayload)
-    .eq("id", id)
-    .select("*")
-    .single();
+  const base = supabase.from(TABLE).update(updatePayload).eq("id", id);
+  const scoped = owner !== undefined ? base.eq("owner", owner) : base;
+  const { data, error } = await scoped.select("*").single();
   if (error) throw error;
   return data as LeadRecord;
 }
