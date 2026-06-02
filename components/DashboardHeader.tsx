@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { useLogout } from "@/lib/useLogout";
 
 interface DashboardHeaderProps {
@@ -22,20 +22,6 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ title, subtitle, navLink, onRefresh, isRefreshing }: DashboardHeaderProps) {
   const logout = useLogout();
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    fetch("/api/auth/me")
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: { userId?: string } | null) => {
-        if (active && data?.userId) setUserId(data.userId);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
   const navClass =
     navLink.variant === "primary"
       ? "inline-flex items-center gap-2 rounded-lg bg-[#F7941D] px-5 py-2.5 text-base font-medium text-white shadow-sm transition-colors hover:bg-[#E5831A]"
@@ -57,11 +43,6 @@ export function DashboardHeader({ title, subtitle, navLink, onRefresh, isRefresh
         </div>
       </div>
       <div className="flex items-center gap-3">
-        {userId && (
-          <span className="hidden rounded-lg bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-600 sm:inline-flex">
-            Ingelogd als {userId}
-          </span>
-        )}
         <Link href={navLink.href} className={navClass}>
           {navLink.icon}
           {navLink.label}
