@@ -1,31 +1,41 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-function prefersReducedMotion(): boolean {
-  if (typeof window === "undefined" || !window.matchMedia) return false;
+function subscribeReducedMotion(onStoreChange: () => void) {
+  const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  media.addEventListener("change", onStoreChange);
+  return () => media.removeEventListener("change", onStoreChange);
+}
+
+function getReducedMotionSnapshot() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 /** Smoothly tweens a displayed integer toward `target` (easeOutCubic). Snaps instantly if reduced-motion is on. */
 export function useCountUp(target: number, durationMs = 800): number {
+  const reducedMotion = useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotionSnapshot,
+    () => false,
+  );
+
   const [value, setValue] = useState(target);
   const fromRef = useRef(target);
   const valueRef = useRef(target);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (reducedMotion) {
+      fromRef.current = target;
+      valueRef.current = target;
+      return;
+    }
+
     const from = fromRef.current;
     const to = target;
 
     if (from === to) return;
-
-    if (prefersReducedMotion()) {
-      fromRef.current = to;
-      valueRef.current = to;
-      setValue(to);
-      return;
-    }
 
     const start = performance.now();
     const tick = (now: number) => {
@@ -46,7 +56,11 @@ export function useCountUp(target: number, durationMs = 800): number {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       fromRef.current = valueRef.current;
     };
-  }, [target, durationMs]);
+  }, [target, durationMs, reducedMotion]);
+
+  if (reducedMotion) {
+    return target;
+  }
 
   return value;
 }
