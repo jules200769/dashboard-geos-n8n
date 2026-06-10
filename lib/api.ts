@@ -47,11 +47,18 @@ export async function ignoreLead(id: string): Promise<{ message: string }> {
   return payload;
 }
 
-export async function saveLead(id: string, lead: LeadRecord): Promise<{ message: string; lead: LeadRecord }> {
+export async function saveLead(
+  id: string,
+  lead: LeadRecord,
+  options?: { updateScope?: "account" | "contact" },
+): Promise<{ message: string; lead: LeadRecord }> {
   const response = await fetch(`/api/leads/${id}/save`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ lead }),
+    body: JSON.stringify({
+      lead,
+      ...(options?.updateScope ? { update_scope: options.updateScope } : {}),
+    }),
   });
   const payload = await response.json();
   if (!response.ok) {

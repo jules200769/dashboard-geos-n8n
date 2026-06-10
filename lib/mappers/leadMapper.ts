@@ -188,6 +188,7 @@ export function mapIncomingPayload(payload: AnyJson): LeadInsertPayload {
 }
 
 export type SaveMode = "create" | "update";
+export type UpdateScope = "account" | "contact";
 
 function pickStringField(source: Record<string, unknown>, ...keys: string[]): string {
   for (const key of keys) {
@@ -264,11 +265,13 @@ export function resolveSalesforceIds(lead: LeadRecord): { accountId: string; con
 export function mapLeadForSave(
   lead: LeadRecord,
   saveMode: SaveMode = "create",
+  updateScope?: UpdateScope,
 ): Record<string, unknown> {
   return {
     id: lead.id,
     owner: lead.owner ?? "",
     save_mode: saveMode,
+    ...(saveMode === "update" && updateScope ? { update_scope: updateScope } : {}),
     salesforce_account_id: lead.salesforce_account_id ?? "",
     salesforce_contact_id: lead.salesforce_contact_id ?? "",
     contact_name: lead.contact_name,

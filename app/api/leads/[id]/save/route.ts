@@ -7,6 +7,7 @@ import {
   parseSalesforceIdsFromWebhookBody,
   resolveSalesforceIds,
   type SaveMode,
+  type UpdateScope,
 } from "@/lib/mappers/leadMapper";
 import type { LeadRecord } from "@/lib/types";
 
@@ -19,6 +20,10 @@ function asDraft(value: unknown): Partial<LeadRecord> {
   const payload = value as { lead?: unknown };
   if (!payload.lead || typeof payload.lead !== "object" || Array.isArray(payload.lead)) return {};
   return payload.lead as Partial<LeadRecord>;
+}
+
+function asUpdateScope(value: unknown): UpdateScope | undefined {
+  return value === "account" || value === "contact" ? value : undefined;
 }
 
 function summarizeWebhookFailure(body?: string, status?: number): string {
@@ -83,7 +88,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const savePayload = mapLeadForSave(leadForSave, saveMode);
+    const updateScope = isUpdate ? asUpdateScope(requestPayload.update_scope) : undefined;
+    const savePayload = mapLeadForSave(leadForSave, saveMode, updateScope);
     const webhooks = resolveN8nWebhooks(owner);
     const webhookUrl = isUpdate ? webhooks.update || webhooks.save : webhooks.save;
 

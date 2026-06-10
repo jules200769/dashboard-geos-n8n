@@ -142,7 +142,7 @@ interface LeadDetailDrawerProps {
   open: boolean;
   onClose: () => void;
   onChange: (next: LeadRecord) => void;
-  onSave: (lead: LeadRecord) => void;
+  onSave: (lead: LeadRecord, options?: { updateScope?: "account" | "contact" }) => void;
   isSaving: boolean;
   /**
    * "review" = first save from the open queue (create in Salesforce).
@@ -504,7 +504,7 @@ export function LeadDetailDrawer({
               ) : (
                 <button
                   type="button"
-                  onClick={() => onSave(draft)}
+                  onClick={() => onSave(draft, isEditMode ? { updateScope: step } : undefined)}
                   disabled={isSaving || (!isEditMode && draft.status === "saved")}
                   className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-zinc-900 px-4 py-3.5 text-sm font-semibold text-white shadow-[0_4px_14px_-4px_rgba(0,0,0,0.45)] transition-all duration-150 ease-out active:scale-[0.99] active:shadow-md disabled:cursor-not-allowed disabled:bg-zinc-400 disabled:shadow-none disabled:active:scale-100"
                 >

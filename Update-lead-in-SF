@@ -17,7 +17,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = ($input.first().json && $input.first().json.body) ? $input.first().json.body : ($input.first().json || {});\nconst account = body.account && typeof body.account === 'object' ? body.account : {};\nconst contact = body.contact && typeof body.contact === 'object' ? body.contact : {};\n\nconst fullName = String(contact.full_name || body.contact_name || '').trim();\nconst nameParts = fullName.split(/\\s+/).filter(Boolean);\nconst firstName = nameParts.length > 1 ? nameParts[0] : '';\nlet lastName = 'Unknown';\nif (nameParts.length > 1) { lastName = nameParts.slice(1).join(' '); } else if (nameParts.length === 1) { lastName = nameParts[0]; }\n\nconst phoneCountry = String(contact.phone_country_code || '').trim();\nconst phoneLocal = String(contact.phone_number || '').trim();\nconst phoneCombined = (phoneCountry && phoneLocal) ? (phoneCountry + ' ' + phoneLocal) : (phoneLocal || phoneCountry);\n\nconst contactId = String(contact.salesforce_id || body.salesforce_contact_id || '').trim();\nconst accountId = String(account.salesforce_id || account.id || body.salesforce_account_id || body.matched_account_id || '').trim();\n\nconst salesforceMode = String(body.salesforce_mode || '').trim();\nconst shouldUpdateAccount = salesforceMode === 'create_account_then_contact' && Boolean(accountId);\n\nconst rawGender = String(contact.gender || body.contact_gender || '').trim().toLowerCase();\nconst salutation = rawGender === 'man' ? 'Mr.' : (rawGender === 'vrouw' ? 'Ms.' : '');\n\nreturn [{ json: {\n  leadId: String(body.id || ''),\n  salesforceMode: salesforceMode,\n  shouldUpdateAccount: shouldUpdateAccount,\n  hasAccountId: Boolean(accountId),\n  hasContactId: Boolean(contactId),\n  contactId: contactId,\n  accountId: accountId,\n  accountName: String(account.name || body.account_name || body.org_name || '').trim(),\n  website: String(account.website || body.matched_account_website || '').trim(),\n  accountNumber: String(account.number || body.account_number || '').trim(),\n  accountDescription: String(account.description || body.account_description || '').trim(),\n  industry: String(body.industry || account.industry || '').trim(),\n  firstName: firstName,\n  lastName: lastName,\n  email: String(contact.email || body.sender_email || '').trim(),\n  phone: phoneCombined,\n  contactDescription: String(contact.description || body.suggested_action || '').trim(),\n  contactTitle: String(contact.title || body.contact_title || '').trim(),\n  salutation: salutation\n}}];"
+        "jsCode": "const body = ($input.first().json && $input.first().json.body) ? $input.first().json.body : ($input.first().json || {});\nconst account = body.account && typeof body.account === 'object' ? body.account : {};\nconst contact = body.contact && typeof body.contact === 'object' ? body.contact : {};\n\nconst fullName = String(contact.full_name || body.contact_name || '').trim();\nconst nameParts = fullName.split(/\\s+/).filter(Boolean);\nconst firstName = nameParts.length > 1 ? nameParts[0] : '';\nlet lastName = 'Unknown';\nif (nameParts.length > 1) { lastName = nameParts.slice(1).join(' '); } else if (nameParts.length === 1) { lastName = nameParts[0]; }\n\nconst phoneCountry = String(contact.phone_country_code || '').trim();\nconst phoneLocal = String(contact.phone_number || '').trim();\nconst phoneCombined = (phoneCountry && phoneLocal) ? (phoneCountry + ' ' + phoneLocal) : (phoneLocal || phoneCountry);\n\nconst contactId = String(contact.salesforce_id || body.salesforce_contact_id || '').trim();\nconst accountId = String(account.salesforce_id || account.id || body.salesforce_account_id || body.matched_account_id || '').trim();\n\nconst salesforceMode = String(body.salesforce_mode || '').trim();\nconst updateScope = String(body.update_scope || '').trim().toLowerCase();\n\nlet shouldUpdateAccount = false;\nlet shouldUpdateContact = false;\n\nif (updateScope === 'account') {\n  shouldUpdateAccount = salesforceMode === 'create_account_then_contact' && Boolean(accountId);\n} else if (updateScope === 'contact') {\n  shouldUpdateContact = Boolean(contactId);\n} else {\n  shouldUpdateAccount = salesforceMode === 'create_account_then_contact' && Boolean(accountId);\n  shouldUpdateContact = Boolean(contactId);\n}\n\nconst rawGender = String(contact.gender || body.contact_gender || '').trim().toLowerCase();\nconst salutation = rawGender === 'man' ? 'Mr.' : (rawGender === 'vrouw' ? 'Ms.' : '');\n\nreturn [{ json: {\n  leadId: String(body.id || ''),\n  salesforceMode: salesforceMode,\n  updateScope: updateScope,\n  shouldUpdateAccount: shouldUpdateAccount,\n  shouldUpdateContact: shouldUpdateContact,\n  hasAccountId: Boolean(accountId),\n  hasContactId: Boolean(contactId),\n  contactId: contactId,\n  accountId: accountId,\n  accountName: String(account.name || body.account_name || body.org_name || '').trim(),\n  website: String(account.website || body.matched_account_website || '').trim(),\n  accountNumber: String(account.number || body.account_number || '').trim(),\n  accountDescription: String(account.description || body.account_description || '').trim(),\n  industry: String(body.industry || account.industry || '').trim(),\n  firstName: firstName,\n  lastName: lastName,\n  email: String(contact.email || body.sender_email || '').trim(),\n  phone: phoneCombined,\n  contactDescription: String(contact.description || body.suggested_action || '').trim(),\n  contactTitle: String(contact.title || body.contact_title || '').trim(),\n  salutation: salutation\n}}];"
       },
       "id": "b82a5f78-3eb7-4240-aa39-dd3f617b148c",
       "name": "Parse Update Payload",
@@ -111,6 +111,36 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "has-contact",
+              "leftValue": "={{ $json.shouldUpdateContact }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "Has Contact To Update?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1560, 400]
+    },
+    {
+      "parameters": {
         "resource": "contact",
         "operation": "update",
         "contactId": "={{ $json.contactId }}",
@@ -128,7 +158,7 @@
       "name": "SF Update Contact",
       "type": "n8n-nodes-base.salesforce",
       "typeVersion": 1,
-      "position": [1560, 400],
+      "position": [1780, 304],
       "alwaysOutputData": true,
       "credentials": {
         "salesforceOAuth2Api": {
@@ -139,13 +169,23 @@
     },
     {
       "parameters": {
-        "jsCode": "const contactResult = $input.first().json || {};\nconst parsed = $('Parse Update Payload').first().json || {};\nreturn [{ json: {\n  ok: contactResult.success !== false,\n  mode: 'update',\n  salesforce_account_id: String(parsed.accountId || ''),\n  salesforce_contact_id: String(parsed.contactId || ''),\n  leadId: String(parsed.leadId || ''),\n  saved_at: new Date().toISOString()\n}}];"
+        "jsCode": "const parsed = $('Parse Update Payload').first().json || {};\nreturn [{ json: Object.assign({}, parsed, { contactUpdated: false }) }];"
+      },
+      "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "name": "No Contact To Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 496]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json || {};\nconst parsed = $('Parse Update Payload').first().json || {};\nconst contactOk = parsed.shouldUpdateContact === false || input.success !== false;\nreturn [{ json: {\n  ok: contactOk,\n  mode: 'update',\n  salesforce_account_id: String(parsed.accountId || ''),\n  salesforce_contact_id: String(parsed.contactId || ''),\n  leadId: String(parsed.leadId || ''),\n  saved_at: new Date().toISOString()\n}}];"
       },
       "id": "df6a758b-45b9-4b30-bba8-ff0cb8a53e62",
       "name": "Build Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1780, 400]
+      "position": [2000, 400]
     },
     {
       "parameters": {
@@ -158,7 +198,7 @@
       "name": "Respond to Dashboard",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [2000, 400]
+      "position": [2220, 400]
     }
   ],
   "connections": {
@@ -181,12 +221,21 @@
       "main": [[{ "node": "Merge Branches", "type": "main", "index": 0 }]]
     },
     "Merge Branches": {
-      "main": [[{ "node": "SF Update Contact", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Has Contact To Update?", "type": "main", "index": 0 }]]
     },
     "No Account To Update": {
       "main": [[{ "node": "Merge Branches", "type": "main", "index": 1 }]]
     },
+    "Has Contact To Update?": {
+      "main": [
+        [{ "node": "SF Update Contact", "type": "main", "index": 0 }],
+        [{ "node": "No Contact To Update", "type": "main", "index": 0 }]
+      ]
+    },
     "SF Update Contact": {
+      "main": [[{ "node": "Build Response", "type": "main", "index": 0 }]]
+    },
+    "No Contact To Update": {
       "main": [[{ "node": "Build Response", "type": "main", "index": 0 }]]
     },
     "Build Response": {

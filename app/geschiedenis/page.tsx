@@ -62,11 +62,14 @@ export default function HistoryPage() {
     setSelectedLead(next);
   };
 
-  const handleSave = async (lead: LeadRecord) => {
+  const handleSave = async (
+    lead: LeadRecord,
+    options?: { updateScope?: "account" | "contact" },
+  ) => {
     setSavingId(lead.id);
     setFeedback(null);
     try {
-      const result = await saveLead(lead.id, lead);
+      const result = await saveLead(lead.id, lead, options);
       setLeads((current) => current.map((item) => (item.id === lead.id ? result.lead : item)));
       setSelectedLead(null);
       setFeedback({ text: result.message, type: "success" });
