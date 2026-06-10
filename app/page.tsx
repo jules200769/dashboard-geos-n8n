@@ -16,6 +16,7 @@ import {
 import { LeadCard } from "@/components/LeadCard";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { DashboardPageSkeleton } from "@/components/DashboardSkeleton";
 import { FeedbackToast } from "@/components/FeedbackToast";
 import { fetchLeads, ignoreLead, recheckLead, saveLead } from "@/lib/api";
 import { useCountUp } from "@/lib/useCountUp";
@@ -87,6 +88,7 @@ export default function Home() {
   const [feedback, setFeedback] = useState<{ text: string; type: "success" | "error" | "info" } | null>(null);
   const [notFoundModalLead, setNotFoundModalLead] = useState<LeadRecord | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   useEffect(() => {
     if (feedback) {
@@ -105,6 +107,7 @@ export default function Home() {
       setFeedback({ text: error instanceof Error ? error.message : "Kon dashboard niet laden.", type: "error" });
     } finally {
       setIsLoading(false);
+      setHasLoadedOnce(true);
     }
   };
 
@@ -187,6 +190,10 @@ export default function Home() {
     }
   };
 
+  if (isLoading && !hasLoadedOnce) {
+    return <DashboardPageSkeleton />;
+  }
+
   return (
     <div className="flex min-h-dvh flex-col bg-zinc-100 text-zinc-900 xl:min-h-0 xl:flex-1 xl:overflow-hidden">
       <main className="mx-auto flex w-full max-w-[1600px] flex-col px-6 py-4 pb-8 md:px-12 md:py-5 xl:flex-1 xl:min-h-0 xl:overflow-hidden xl:pb-5">
@@ -253,9 +260,7 @@ export default function Home() {
               <p className="shrink-0 text-sm text-zinc-500">{openLeads.length} vermeldingen</p>
             </div>
             <div className="flex h-80 min-h-0 flex-col gap-3 overflow-y-auto pr-2 xl:h-auto xl:flex-1">
-              {isLoading ? (
-                <div className="py-8 text-center text-base text-zinc-500">Laden...</div>
-              ) : openLeads.length === 0 ? (
+              {openLeads.length === 0 ? (
                 <div className="py-8 text-center text-base text-zinc-500">Geen open leads in de wachtrij.</div>
               ) : (
                 <AnimatePresence initial mode="popLayout">

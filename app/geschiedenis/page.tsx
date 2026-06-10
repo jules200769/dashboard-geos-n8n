@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { LeadCard } from "@/components/LeadCard";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { HistoryPageSkeleton } from "@/components/DashboardSkeleton";
 import { FeedbackToast, type Feedback } from "@/components/FeedbackToast";
 import { fetchLeads, ignoreLead, saveLead } from "@/lib/api";
 import type { LeadRecord } from "@/lib/types";
@@ -17,6 +18,7 @@ export default function HistoryPage() {
   const [ignoringId, setIgnoringId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   useEffect(() => {
     if (feedback) {
@@ -34,6 +36,7 @@ export default function HistoryPage() {
       setFeedback({ text: error instanceof Error ? error.message : "Kon geschiedenis niet laden.", type: "error" });
     } finally {
       setIsLoading(false);
+      setHasLoadedOnce(true);
     }
   };
 
@@ -90,6 +93,10 @@ export default function HistoryPage() {
     }
   };
 
+  if (isLoading && !hasLoadedOnce) {
+    return <HistoryPageSkeleton />;
+  }
+
   return (
     <div className="flex min-h-dvh flex-col bg-zinc-100 text-zinc-900 xl:min-h-0 xl:flex-1 xl:overflow-hidden">
       <main className="mx-auto flex w-full max-w-[1600px] flex-col px-6 py-4 pb-8 md:px-12 md:py-5 xl:flex-1 xl:min-h-0 xl:overflow-hidden xl:pb-5">
@@ -133,9 +140,7 @@ export default function HistoryPage() {
           </div>
 
           <div className="grid min-h-0 flex-1 grid-cols-1 content-start gap-3 overflow-y-auto pr-1 lg:grid-cols-2 lg:gap-4">
-            {isLoading ? (
-              <div className="col-span-full py-12 text-center text-base text-zinc-500">Laden...</div>
-            ) : savedLeads.length === 0 ? (
+            {savedLeads.length === 0 ? (
               <div className="col-span-full flex flex-col items-center gap-2 py-16 text-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
                   <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
