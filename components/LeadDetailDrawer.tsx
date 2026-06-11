@@ -180,7 +180,7 @@ export function LeadDetailDrawer({
   useEffect(() => {
     setDraft(lead);
     setStep(getInitialStep(lead));
-  }, [lead]);
+  }, [lead?.id]);
 
   useEffect(() => {
     setIsClosing(false);
