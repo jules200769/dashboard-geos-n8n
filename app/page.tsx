@@ -89,6 +89,7 @@ export default function Home() {
   const [notFoundModalLead, setNotFoundModalLead] = useState<LeadRecord | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [leadQuery, setLeadQuery] = useState("");
 
   useEffect(() => {
     if (feedback) {
@@ -117,6 +118,16 @@ export default function Home() {
   }, []);
 
   const openLeads = useMemo(() => leads.filter((lead) => lead.status === "open"), [leads]);
+
+  const filteredOpenLeads = useMemo(() => {
+    const term = leadQuery.trim().toLowerCase();
+    if (!term) return openLeads;
+    return openLeads.filter((lead) =>
+      [lead.contact_name, lead.org_name, lead.sender_email, lead.account_name, lead.subject]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(term)),
+    );
+  }, [openLeads, leadQuery]);
 
   const handleLeadChange = (next: LeadRecord) => {
     setLeads((current) => current.map((lead) => (lead.id === next.id ? next : lead)));
@@ -246,25 +257,91 @@ export default function Home() {
             </div>
           </div>
           <div className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm md:p-6 xl:min-h-0">
-            <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
-              <h2 className="flex flex-wrap items-center gap-2 text-base font-semibold text-zinc-800">
-                <span>Potentiële Salesforce contacten</span>
-                <Image
-                  src="/salesforce-logo.png"
-                  alt="Salesforce"
-                  width={80}
-                  height={26}
-                  className="h-5 w-auto max-w-[6.5rem] object-contain"
+            <div className="mb-4 shrink-0 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="flex min-w-0 flex-wrap items-center gap-2.5 text-base font-semibold tracking-tight text-zinc-900">
+                  <span>Potentiële Salesforce contacten</span>
+                  <Image
+                    src="/salesforce-logo.png"
+                    alt="Salesforce"
+                    width={80}
+                    height={26}
+                    className="h-5 w-auto max-w-[6.5rem] object-contain"
+                  />
+                </h2>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium tabular-nums text-zinc-600 ring-1 ring-inset ring-zinc-200/80">
+                  {filteredOpenLeads.length}
+                  {leadQuery.trim() && filteredOpenLeads.length !== openLeads.length ? (
+                    <span className="font-normal text-zinc-400">/ {openLeads.length}</span>
+                  ) : null}
+                  <span className="font-normal text-zinc-500">
+                    {filteredOpenLeads.length === 1 ? "vermelding" : "vermeldingen"}
+                  </span>
+                </span>
+              </div>
+              <div className="relative">
+                <svg
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+                <input
+                  type="search"
+                  value={leadQuery}
+                  onChange={(event) => setLeadQuery(event.target.value)}
+                  placeholder="Zoek op naam, bedrijf, e-mail of onderwerp"
+                  aria-label="Zoek contactkaarten"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/80 py-2.5 pl-10 pr-10 text-sm text-zinc-900 placeholder:text-zinc-400 transition-colors focus:border-zinc-300 focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-sky-500/15"
                 />
-              </h2>
-              <p className="shrink-0 text-sm text-zinc-500">{openLeads.length} vermeldingen</p>
+                {leadQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => setLeadQuery("")}
+                    className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+                    aria-label="Zoekopdracht wissen"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                ) : null}
+              </div>
             </div>
             <div className="flex h-80 min-h-0 flex-col gap-3 overflow-y-auto pr-2 xl:h-auto xl:flex-1">
               {openLeads.length === 0 ? (
-                <div className="py-8 text-center text-base text-zinc-500">Geen open leads in de wachtrij.</div>
+                <div className="flex flex-col items-center gap-2 py-12 text-center">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  </div>
+                  <p className="text-base text-zinc-500">Geen open leads in de wachtrij.</p>
+                </div>
+              ) : filteredOpenLeads.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-12 text-center">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.3-4.3" />
+                    </svg>
+                  </div>
+                  <p className="text-base text-zinc-500">Geen resultaten voor &ldquo;{leadQuery.trim()}&rdquo;.</p>
+                </div>
               ) : (
                 <AnimatePresence initial mode="popLayout">
-                  {openLeads.map((lead, index) => (
+                  {filteredOpenLeads.map((lead, index) => (
                     <motion.div
                       key={lead.id}
                       layout
