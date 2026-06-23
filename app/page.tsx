@@ -36,10 +36,12 @@ function KpiTile({
   title,
   value,
   titleLogo,
+  valueSuffix,
 }: {
   title: string;
   value: string | number;
   titleLogo?: "salesforce" | "gmail";
+  valueSuffix?: string;
 }) {
   const logo =
     titleLogo === "salesforce"
@@ -72,7 +74,12 @@ function KpiTile({
           title
         )}
       </p>
-      <p className="mt-2 text-4xl font-semibold text-zinc-900 tabular-nums">{displayValue}</p>
+      <p className="mt-2 text-4xl font-semibold text-zinc-900 tabular-nums">
+        {displayValue}
+        {valueSuffix ? (
+          <span className="ml-1 text-lg font-normal text-zinc-500">{valueSuffix}</span>
+        ) : null}
+      </p>
     </div>
   );
 }
@@ -234,7 +241,7 @@ export default function Home() {
         <section className="mb-4 grid shrink-0 grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
           <KpiTile title="Open leads" value={metrics.openLeads} titleLogo="gmail" />
           <KpiTile title="Vandaag opgeslagen" value={metrics.savedToday} titleLogo="salesforce" />
-          <KpiTile title="Geschatte tijdsbesparing (min)" value={metrics.estimatedTimeSavedMinutes} />
+          <KpiTile title="Geschatte tijdsbesparing" value={metrics.estimatedTimeSavedMinutes} valueSuffix="min" />
         </section>
 
         <section className="grid grid-cols-1 gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-2 xl:grid-rows-1 xl:gap-6 xl:overflow-hidden">
